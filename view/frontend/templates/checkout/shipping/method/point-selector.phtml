@@ -58,7 +58,7 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
     <div x-show="hasNoPoint" class="dhl-point-prompt-inline">
         <button
             type="button"
-            class="dhl-select-point-btn inline-flex items-center px-3 py-1.5 font-bold rounded bg-[#FFCC00] hover:bg-[#e6b800] border border-[#D2072A] text-[#D2072A] shadow-none"
+            class="dhl-select-point-btn inline-flex items-center px-3 py-1.5 font-bold rounded bg-dhl-yellow hover:bg-dhl-yellow-hover border border-dhl-red text-dhl-red shadow-none"
             @click="openModal"
         >
             <span><?= $escaper->escapeHtml(__('Select DHL pickup point')) ?></span>
@@ -66,12 +66,12 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
     </div>
 
     <!-- State: Point is selected -->
-    <div x-show="hasPoint" class="dhl-point-selected-inline mt-2 p-2.5 rounded bg-[#FFCC00] border border-[#D2072A] text-[#D2072A]">
-        <p class="font-bold text-[#D2072A] mb-1">
+    <div x-show="hasPoint" class="dhl-point-selected-inline mt-2 p-2.5 rounded bg-dhl-yellow border border-dhl-red text-dhl-red">
+        <p class="font-bold text-dhl-red mb-1">
             <?= $escaper->escapeHtml(__('Selected DHL pickup point:')) ?>
         </p>
         <div class="leading-snug">
-            <strong class="font-bold text-[#D2072A]" x-text="pointName"></strong><br/>
+            <strong class="font-bold text-dhl-red" x-text="pointName"></strong><br/>
             <span x-text="pointStreet"></span><br/>
             <span>
                 <span x-text="pointPostcode"></span>
@@ -81,10 +81,10 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
 
         <!-- Optional Postnummer field for German Packstation delivery -->
         <template x-if="needsPostnummer">
-            <div class="dhl-postnummer-field mt-2 pt-2 border-t border-[#D2072A]/30">
-                <label for="dhl-postnummer-input-<?= $escaper->escapeHtmlAttr($methodCode) ?>" class="block  font-bold text-[#D2072A]">
+            <div class="dhl-postnummer-field mt-2 pt-2 border-t border-dhl-red/30">
+                <label for="dhl-postnummer-input-<?= $escaper->escapeHtmlAttr($methodCode) ?>" class="block font-bold text-dhl-red">
                     <?= $escaper->escapeHtml(__('German Customer Number (Postnummer):')) ?>
-                    <span class="text-[#e02b27]">*</span>
+                    <span class="text-red-600">*</span>
                 </label>
                 <div class="mt-1 flex rounded-md shadow-sm max-w-xs">
                     <input
@@ -98,7 +98,7 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
                         @input="onPostnummerInput"
                     />
                 </div>
-                <p class="mt-1 text-[11px] text-[#D2072A]">
+                <p class="mt-1 text-[11px] text-dhl-red">
                     <?= $escaper->escapeHtml(__('German Customer Number (Postnummer) is required for delivery to a German Packstation.')) ?>
                 </p>
             </div>
@@ -106,7 +106,7 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
 
         <button
             type="button"
-            class="dhl-select-point-btn mt-2 inline-flex items-center px-3 py-1.5 font-bold rounded bg-[#FFCC00] hover:bg-[#e6b800] border border-[#D2072A] text-[#D2072A] shadow-none"
+            class="dhl-select-point-btn mt-2 inline-flex items-center px-3 py-1.5 font-bold rounded bg-dhl-yellow hover:bg-dhl-yellow-hover border border-dhl-red text-dhl-red shadow-none"
             @click="openModal"
         >
             <span><?= $escaper->escapeHtml(__('Change DHL pickup point')) ?></span>
@@ -134,27 +134,26 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
 
             <!-- Modal Panel -->
             <div
-                class="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full max-w-4xl"
+                class="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle w-[92vw] max-w-[1100px]"
                 @keydown.escape.window="closeModal"
             >
                 <div
-                    class="flex items-center justify-between px-4 py-3 bg-[#FFCC00] border-b border-yellow-500"
-                    style="background-color: #FFCC00;"
+                    class="flex items-center justify-between px-4 py-3 bg-dhl-yellow"
                 >
-                    <h3 id="dhl-modal-title" class="text-base font-bold text-gray-900">
+                    <h3 id="dhl-modal-title" class="text-2xl">
                         <?= $escaper->escapeHtml(__('Select DHL Pickup Point')) ?>
                     </h3>
                     <button
                         type="button"
-                        class="text-gray-700 hover:text-black p-1 rounded-full hover:bg-yellow-500/30"
+                        class="text-gray-700 p-1 rounded-full"
                         @click="closeModal"
                         aria-label="<?= $escaper->escapeHtmlAttr(__('Close')) ?>"
                     >
-                        <?= $lucideIcons->xHtml('w-5 h-5', 20, 20, ['aria-hidden' => 'true']) ?>
+                        <?= $lucideIcons->xHtml('w-6 h-6', 20, 20, ['aria-hidden' => 'true']) ?>
                     </button>
                 </div>
 
-                <div class="relative w-full h-[70vh] min-h-[480px] bg-gray-100">
+                <div class="relative w-full h-[80vh] min-h-[500px] bg-gray-100">
                     <template x-if="modalOpen">
                         <iframe
                             :src="mapUrl"

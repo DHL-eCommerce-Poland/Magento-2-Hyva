@@ -54,7 +54,7 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                     if (config.methodCode) this.methodCode = config.methodCode;
                     if (config.packstationLabel) this.packstationLabel = config.packstationLabel;
                     if (config.parcelshopLabel) this.parcelshopLabel = config.parcelshopLabel;
-                    if (config.postnummer) this.postnummer = config.postnummer;
+                    this.postnummer = config.postnummer || '';
                     if (config.pointData && typeof config.pointData === 'object') {
                         this.pointData = {
                             sap: config.pointData.sap || '',

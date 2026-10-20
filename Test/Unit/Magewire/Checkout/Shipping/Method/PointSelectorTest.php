@@ -225,4 +225,38 @@ class PointSelectorTest extends TestCase
         $result = $this->pointSelector->evaluateCompletion($this->evaluationResultFactoryMock);
         $this->assertSame($errorMock, $result);
     }
+
+    public function testBootSyncsPropertiesFromShippingAddress(): void
+    {
+        $this->shippingAddressMock->method('getData')->willReturnCallback(function (string $key) {
+            return match ($key) {
+                ServicePointAttributes::FIELD_SERVICE_POINT_ID => 'POP-KRK-1',
+                ServicePointAttributes::FIELD_SERVICE_POINT_NAME => 'POP Kraków',
+                default => null,
+            };
+        });
+
+        $this->pointSelector->boot();
+
+        $this->assertSame('POP-KRK-1', $this->pointSelector->pointId);
+        $this->assertSame('POP Kraków', $this->pointSelector->pointName);
+    }
+
+    public function testSyncFromQuoteResetsPropertiesWhenPointClearedOnAddress(): void
+    {
+        $this->pointSelector->pointId = 'PREVIOUS-POINT';
+        $this->pointSelector->pointName = 'Previous Point';
+
+        $this->shippingAddressMock->method('getData')->willReturnCallback(function (string $key) {
+            return match ($key) {
+                ServicePointAttributes::FIELD_SERVICE_POINT_ID => '',
+                default => null,
+            };
+        });
+
+        $this->pointSelector->syncFromQuote();
+
+        $this->assertNull($this->pointSelector->pointId);
+        $this->assertSame('', $this->pointSelector->pointName);
+    }
 }

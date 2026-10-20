@@ -107,10 +107,8 @@ class ShippingMethodListPluginTest extends TestCase
         $this->assertSame($errorMock, $result);
     }
 
-    public function testAfterUpdatedMethodClearsServicePointWhenNonPointMethodSelected(): void
+    public function testAfterUpdatedMethodClearsServicePointWhenSwitchingBetweenPointMethods(): void
     {
-        $this->methodCatalogMock->method('isServicePointMethod')->with('parcel_polska')->willReturn(false);
-
         $this->shippingAddressMock->method('getData')
             ->with(ServicePointAttributes::FIELD_SERVICE_POINT_ID)
             ->willReturn('BOX-123');
@@ -129,20 +127,60 @@ class ShippingMethodListPluginTest extends TestCase
             ->method('save')
             ->with($this->quoteMock);
 
-        $result = $this->plugin->afterUpdatedMethod($this->subjectMock, 'dhlpoland_parcel_polska');
+        $result = $this->plugin->afterUpdatedMethod(
+            $this->subjectMock,
+            'dhlpoland_economy_pop'
+        );
+
+        $this->assertSame('dhlpoland_economy_pop', $result);
+        $this->assertArrayHasKey(ServicePointAttributes::FIELD_SERVICE_POINT_ID, $savedData);
+        $this->assertNull($savedData[ServicePointAttributes::FIELD_SERVICE_POINT_ID]);
+    }
+
+    public function testAfterUpdatedMethodClearsServicePointWhenSwitchingToNonPointMethod(): void
+    {
+        $this->shippingAddressMock->method('getData')
+            ->with(ServicePointAttributes::FIELD_SERVICE_POINT_ID)
+            ->willReturn('BOX-123');
+
+        $savedData = [];
+        $this->shippingAddressMock->expects($this->atLeastOnce())
+            ->method('setData')
+            ->willReturnCallback(function ($key, $val = null) use (&$savedData) {
+                if (is_string($key)) {
+                    $savedData[$key] = $val;
+                }
+                return $this->shippingAddressMock;
+            });
+
+        $this->quoteRepositoryMock->expects($this->once())
+            ->method('save')
+            ->with($this->quoteMock);
+
+        $result = $this->plugin->afterUpdatedMethod(
+            $this->subjectMock,
+            'dhlpoland_parcel_polska'
+        );
+
         $this->assertSame('dhlpoland_parcel_polska', $result);
         $this->assertArrayHasKey(ServicePointAttributes::FIELD_SERVICE_POINT_ID, $savedData);
         $this->assertNull($savedData[ServicePointAttributes::FIELD_SERVICE_POINT_ID]);
     }
 
-    public function testAfterUpdatedMethodDoesNotClearWhenPointMethodSelected(): void
+    public function testAfterUpdatedMethodDoesNotSaveQuoteWhenNoPointExisted(): void
     {
-        $this->methodCatalogMock->method('isServicePointMethod')->with('economy_box')->willReturn(true);
+        $this->shippingAddressMock->method('getData')
+            ->with(ServicePointAttributes::FIELD_SERVICE_POINT_ID)
+            ->willReturn(null);
 
         $this->shippingAddressMock->expects($this->never())->method('setData');
         $this->quoteRepositoryMock->expects($this->never())->method('save');
 
-        $result = $this->plugin->afterUpdatedMethod($this->subjectMock, 'dhlpoland_economy_box');
+        $result = $this->plugin->afterUpdatedMethod(
+            $this->subjectMock,
+            'dhlpoland_economy_box'
+        );
+
         $this->assertSame('dhlpoland_economy_box', $result);
     }
 }

@@ -1,2 +1,8 @@
 @source "../templates";
 @source "../layout";
+
+@theme {
+    --color-dhl-yellow: #ffcf1f;
+    --color-dhl-yellow-hover: #e6ba1c;
+    --color-dhl-red: #d40511;
+}

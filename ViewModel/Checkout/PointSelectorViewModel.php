@@ -197,12 +197,16 @@ class PointSelectorViewModel implements ArgumentInterface
 
             $name = trim((string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_NAME) ?? ''));
             $street = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_STREET) ?? '');
-            $postcode = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE) ?? '');
+            $postcode = (string) (
+                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE) ?? ''
+            );
             $city = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_CITY) ?? '');
             $isPackstation = (bool) ($shippingAddress->getData(ServicePointAttributes::FIELD_IS_PACKSTATION) ?? false);
             $isPostfiliale = (bool) ($shippingAddress->getData(ServicePointAttributes::FIELD_IS_POSTFILIALE) ?? false);
             $postnummer = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_POSTNUMMER) ?? '');
-            $country = strtoupper((string) ($shippingAddress->getCountryId() ?? ServicePointAttributes::DEFAULT_COUNTRY));
+            $country = strtoupper(
+                (string) ($shippingAddress->getCountryId() ?? ServicePointAttributes::DEFAULT_COUNTRY)
+            );
 
             return [
                 'sap' => $sap,

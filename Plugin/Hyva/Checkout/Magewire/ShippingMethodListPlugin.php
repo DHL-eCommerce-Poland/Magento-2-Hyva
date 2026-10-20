@@ -14,6 +14,7 @@ use Hyva\Checkout\Model\Magewire\Component\Evaluation\EvaluationResult;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -87,7 +88,7 @@ class ShippingMethodListPlugin
     }
 
     /**
-     * Intercept updatedMethod to clean up service point data when switching to non-point method.
+     * Intercept updatedMethod to clean up service point data when switching delivery methods.
      *
      * @param MethodList $subject
      * @param string $value
@@ -96,16 +97,7 @@ class ShippingMethodListPlugin
      */
     public function afterUpdatedMethod(MethodList $subject, string $value): string
     {
-        $cleanMethod = str_starts_with($value, Carrier::CODE_PREFIX)
-            ? substr($value, strlen(Carrier::CODE_PREFIX))
-            : $value;
-
-        $isPointMethod = str_starts_with($value, Carrier::CODE_PREFIX)
-            && $this->methodCatalog->isServicePointMethod($cleanMethod);
-
-        if (!$isPointMethod) {
-            $this->resetQuoteServicePoint();
-        }
+        $this->resetQuoteServicePoint();
 
         return $value;
     }
@@ -128,14 +120,26 @@ class ShippingMethodListPlugin
                 return;
             }
 
-            $hasPoint = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_ID) ?? '') !== '';
-            if (!$hasPoint) {
+            $pointId = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_ID) ?? '');
+            if ($pointId === '') {
                 return;
             }
 
             foreach (ServicePointAttributes::ALL_FIELDS as $field) {
                 $defaultValue = str_starts_with($field, 'dhl_is_') ? 0 : null;
                 $shippingAddress->setData($field, $defaultValue);
+            }
+
+            $extAttributes = $shippingAddress->getExtensionAttributes();
+            if ($extAttributes !== null && method_exists($extAttributes, 'setDhlServicePointId')) {
+                $extAttributes->setDhlServicePointId(null);
+                $extAttributes->setDhlServicePointName(null);
+                $extAttributes->setDhlServicePointStreet(null);
+                $extAttributes->setDhlServicePointPostcode(null);
+                $extAttributes->setDhlServicePointCity(null);
+                $extAttributes->setDhlIsPackstation(0);
+                $extAttributes->setDhlIsPostfiliale(0);
+                $extAttributes->setDhlPostnummer(null);
             }
 
             $this->quoteRepository->save($quote);

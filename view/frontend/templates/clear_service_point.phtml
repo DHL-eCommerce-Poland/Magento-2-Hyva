@@ -10,16 +10,14 @@ use Magento\Framework\View\Element\Template;
 /** @var ViewModelRegistry $viewModels */
 /** @var HyvaCsp $hyvaCsp */
 
-$hyvaCsp = isset($viewModels) ? $viewModels->require(HyvaCsp::class) : null;
+$hyvaCsp = $viewModels->require(HyvaCsp::class);
 ?>
 <script>
     try {
         window.sessionStorage.removeItem('dhl_selected_service_points');
         window.sessionStorage.removeItem('dhl_selected_service_point');
     } catch (e) {
-        // Ignore storage access errors
+        console.warn('Unable to clear DHL service point session storage:', e);
     }
 </script>
-<?php if ($hyvaCsp): ?>
-    <?php $hyvaCsp->registerInlineScript() ?>
-<?php endif; ?>
+<?php $hyvaCsp->registerInlineScript() ?>

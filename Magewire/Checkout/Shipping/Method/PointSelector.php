@@ -24,15 +24,61 @@ use Throwable;
  */
 class PointSelector extends Component implements EvaluationInterface
 {
+    /**
+     * @var array
+     */
+    protected $listeners = [
+        'shipping_method_selected' => 'syncFromQuote',
+    ];
+
+    /**
+     * @var string|null
+     */
     public ?string $pointId = null;
+
+    /**
+     * @var string|null
+     */
     public ?string $pointName = null;
+
+    /**
+     * @var string|null
+     */
     public ?string $pointStreet = null;
+
+    /**
+     * @var string|null
+     */
     public ?string $pointPostcode = null;
+
+    /**
+     * @var string|null
+     */
     public ?string $pointCity = null;
+
+    /**
+     * @var bool
+     */
     public bool $isPackstation = false;
+
+    /**
+     * @var bool
+     */
     public bool $isPostfiliale = false;
+
+    /**
+     * @var string|null
+     */
     public ?string $postnummer = null;
+
+    /**
+     * @var string|null
+     */
     public ?string $country = null;
+
+    /**
+     * @var string|null
+     */
     public ?string $methodCode = null;
 
     /**
@@ -68,9 +114,7 @@ class PointSelector extends Component implements EvaluationInterface
      */
     public function boot(): void
     {
-        if ($this->pointId === null) {
-            $this->syncFromQuote();
-        }
+        $this->syncFromQuote();
     }
 
     /**
@@ -125,14 +169,50 @@ class PointSelector extends Component implements EvaluationInterface
                 $country
             );
 
-            $shippingAddress->setData(ServicePointAttributes::FIELD_SERVICE_POINT_ID, $servicePoint->getId());
-            $shippingAddress->setData(ServicePointAttributes::FIELD_SERVICE_POINT_NAME, $servicePoint->getName());
-            $shippingAddress->setData(ServicePointAttributes::FIELD_SERVICE_POINT_STREET, $servicePoint->getStreet());
-            $shippingAddress->setData(ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE, $servicePoint->getPostcode());
-            $shippingAddress->setData(ServicePointAttributes::FIELD_SERVICE_POINT_CITY, $servicePoint->getCity());
-            $shippingAddress->setData(ServicePointAttributes::FIELD_IS_PACKSTATION, $servicePoint->isPackstation() ? 1 : 0);
-            $shippingAddress->setData(ServicePointAttributes::FIELD_IS_POSTFILIALE, $servicePoint->isPostfiliale() ? 1 : 0);
-            $shippingAddress->setData(ServicePointAttributes::FIELD_POSTNUMMER, $servicePoint->getPostnummer());
+            $shippingAddress->setData(
+                ServicePointAttributes::FIELD_SERVICE_POINT_ID,
+                $servicePoint->getId()
+            );
+            $shippingAddress->setData(
+                ServicePointAttributes::FIELD_SERVICE_POINT_NAME,
+                $servicePoint->getName()
+            );
+            $shippingAddress->setData(
+                ServicePointAttributes::FIELD_SERVICE_POINT_STREET,
+                $servicePoint->getStreet()
+            );
+            $shippingAddress->setData(
+                ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE,
+                $servicePoint->getPostcode()
+            );
+            $shippingAddress->setData(
+                ServicePointAttributes::FIELD_SERVICE_POINT_CITY,
+                $servicePoint->getCity()
+            );
+            $shippingAddress->setData(
+                ServicePointAttributes::FIELD_IS_PACKSTATION,
+                $servicePoint->isPackstation() ? 1 : 0
+            );
+            $shippingAddress->setData(
+                ServicePointAttributes::FIELD_IS_POSTFILIALE,
+                $servicePoint->isPostfiliale() ? 1 : 0
+            );
+            $shippingAddress->setData(
+                ServicePointAttributes::FIELD_POSTNUMMER,
+                $servicePoint->getPostnummer()
+            );
+
+            $extAttributes = $shippingAddress->getExtensionAttributes();
+            if ($extAttributes !== null && method_exists($extAttributes, 'setDhlServicePointId')) {
+                $extAttributes->setDhlServicePointId($servicePoint->getId());
+                $extAttributes->setDhlServicePointName($servicePoint->getName());
+                $extAttributes->setDhlServicePointStreet($servicePoint->getStreet());
+                $extAttributes->setDhlServicePointPostcode($servicePoint->getPostcode());
+                $extAttributes->setDhlServicePointCity($servicePoint->getCity());
+                $extAttributes->setDhlIsPackstation($servicePoint->isPackstation() ? 1 : 0);
+                $extAttributes->setDhlIsPostfiliale($servicePoint->isPostfiliale() ? 1 : 0);
+                $extAttributes->setDhlPostnummer($servicePoint->getPostnummer());
+            }
 
             $this->pointId = $servicePoint->getId();
             $this->pointName = $servicePoint->getName();
@@ -169,6 +249,18 @@ class PointSelector extends Component implements EvaluationInterface
                     foreach (ServicePointAttributes::ALL_FIELDS as $field) {
                         $defaultValue = str_starts_with($field, 'dhl_is_') ? 0 : null;
                         $shippingAddress->setData($field, $defaultValue);
+                    }
+
+                    $extAttributes = $shippingAddress->getExtensionAttributes();
+                    if ($extAttributes !== null && method_exists($extAttributes, 'setDhlServicePointId')) {
+                        $extAttributes->setDhlServicePointId(null);
+                        $extAttributes->setDhlServicePointName(null);
+                        $extAttributes->setDhlServicePointStreet(null);
+                        $extAttributes->setDhlServicePointPostcode(null);
+                        $extAttributes->setDhlServicePointCity(null);
+                        $extAttributes->setDhlIsPackstation(0);
+                        $extAttributes->setDhlIsPostfiliale(0);
+                        $extAttributes->setDhlPostnummer(null);
                     }
 
                     $this->quoteRepository->save($quote);
@@ -274,7 +366,7 @@ class PointSelector extends Component implements EvaluationInterface
      *
      * @return void
      */
-    private function syncFromQuote(): void
+    public function syncFromQuote(): void
     {
         try {
             $quote = $this->sessionCheckout->getQuote();
@@ -289,14 +381,30 @@ class PointSelector extends Component implements EvaluationInterface
 
             $sap = trim((string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_ID) ?? ''));
             $this->pointId = $sap !== '' ? $sap : null;
-            $this->pointName = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_NAME) ?? '');
-            $this->pointStreet = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_STREET) ?? '');
-            $this->pointPostcode = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE) ?? '');
-            $this->pointCity = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_CITY) ?? '');
-            $this->isPackstation = (bool) ($shippingAddress->getData(ServicePointAttributes::FIELD_IS_PACKSTATION) ?? false);
-            $this->isPostfiliale = (bool) ($shippingAddress->getData(ServicePointAttributes::FIELD_IS_POSTFILIALE) ?? false);
-            $this->postnummer = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_POSTNUMMER) ?? '') ?: null;
-            $this->country = strtoupper((string) ($shippingAddress->getCountryId() ?? ServicePointAttributes::DEFAULT_COUNTRY));
+            $this->pointName = (string) (
+                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_NAME) ?? ''
+            );
+            $this->pointStreet = (string) (
+                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_STREET) ?? ''
+            );
+            $this->pointPostcode = (string) (
+                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE) ?? ''
+            );
+            $this->pointCity = (string) (
+                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_CITY) ?? ''
+            );
+            $this->isPackstation = (bool) (
+                $shippingAddress->getData(ServicePointAttributes::FIELD_IS_PACKSTATION) ?? false
+            );
+            $this->isPostfiliale = (bool) (
+                $shippingAddress->getData(ServicePointAttributes::FIELD_IS_POSTFILIALE) ?? false
+            );
+            $this->postnummer = (string) (
+                $shippingAddress->getData(ServicePointAttributes::FIELD_POSTNUMMER) ?? ''
+            ) ?: null;
+            $this->country = strtoupper(
+                (string) ($shippingAddress->getCountryId() ?? ServicePointAttributes::DEFAULT_COUNTRY)
+            );
             $this->methodCode = (string) $shippingAddress->getShippingMethod();
         } catch (Throwable $exception) {
             $this->logger->debug(
