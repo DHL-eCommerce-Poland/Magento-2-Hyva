@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<csp_whitelist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp:etc/csp_whitelist.xsd">
+    <policies>
+        <policy id="frame-src">
+            <values>
+                <value id="dhl_parcelshop" type="host">https://parcelshop.dhl.pl</value>
+                <value id="dhl_pl" type="host">*.dhl.pl</value>
+                <value id="dhl_com" type="host">*.dhl.com</value>
+                <value id="dhl24_pl" type="host">https://dhl24.com.pl</value>
+            </values>
+        </policy>
+        <policy id="connect-src">
+            <values>
+                <value id="dhl_parcelshop_connect" type="host">https://parcelshop.dhl.pl</value>
+                <value id="dhl_pl_connect" type="host">*.dhl.pl</value>
+            </values>
+        </policy>
+        <policy id="img-src">
+            <values>
+                <value id="dhl_parcelshop_img" type="host">https://parcelshop.dhl.pl</value>
+                <value id="dhl_pl_img" type="host">*.dhl.pl</value>
+                <value id="dhl_com_img" type="host">*.dhl.com</value>
+            </values>
+        </policy>
+    </policies>
+</csp_whitelist>

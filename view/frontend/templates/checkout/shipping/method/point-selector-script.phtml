@@ -1,0 +1,236 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+$hyvaCsp = $viewModels->require(HyvaCsp::class);
+?>
+<script>
+    function initDhlPointSelector() {
+        return {
+            mapUrl: 'https://parcelshop.dhl.pl/mapa',
+            isGermanPackstationMethod: false,
+            isPackstationMethod: false,
+            isParcelShopMethod: false,
+            methodCode: '',
+            modalOpen: false,
+            packstationLabel: 'Packstation',
+            parcelshopLabel: 'Parcelshop',
+            pointData: {
+                sap: '',
+                name: '',
+                street: '',
+                postcode: '',
+                city: '',
+                isPackstation: false,
+                isPostfiliale: false,
+                country: 'PL'
+            },
+            postnummer: '',
+
+            init() {
+                this.loadConfig();
+                this.initMessageListener();
+                this.observeConfigChanges();
+            },
+
+            loadConfig() {
+                if (!this.$el || !this.$el.dataset || !this.$el.dataset.config) {
+                    return;
+                }
+                try {
+                    const config = JSON.parse(this.$el.dataset.config);
+                    if (config.mapUrl) this.mapUrl = config.mapUrl;
+                    if (typeof config.isGermanPackstation !== 'undefined') this.isGermanPackstationMethod = Boolean(config.isGermanPackstation);
+                    if (typeof config.isPackstation !== 'undefined') this.isPackstationMethod = Boolean(config.isPackstation);
+                    if (typeof config.isParcelShop !== 'undefined') this.isParcelShopMethod = Boolean(config.isParcelShop);
+                    if (config.methodCode) this.methodCode = config.methodCode;
+                    if (config.packstationLabel) this.packstationLabel = config.packstationLabel;
+                    if (config.parcelshopLabel) this.parcelshopLabel = config.parcelshopLabel;
+                    if (config.postnummer) this.postnummer = config.postnummer;
+                    if (config.pointData && typeof config.pointData === 'object') {
+                        this.pointData = {
+                            sap: config.pointData.sap || '',
+                            name: config.pointData.name || '',
+                            street: config.pointData.street || '',
+                            postcode: config.pointData.postcode || '',
+                            city: config.pointData.city || '',
+                            isPackstation: Boolean(config.pointData.isPackstation),
+                            isPostfiliale: Boolean(config.pointData.isPostfiliale),
+                            country: config.pointData.country || 'PL'
+                        };
+                    }
+                } catch (e) {
+                    console.error('DHL point selector config parse error:', e);
+                }
+            },
+
+            observeConfigChanges() {
+                if (!this.$el || typeof MutationObserver === 'undefined') {
+                    return;
+                }
+                const observer = new MutationObserver((mutations) => {
+                    for (const mutation of mutations) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'data-config') {
+                            this.loadConfig();
+                        }
+                    }
+                });
+                observer.observe(this.$el, { attributes: true, attributeFilter: ['data-config'] });
+            },
+
+            get hasPoint() {
+                return Boolean(this.pointData && this.pointData.sap && String(this.pointData.sap).trim().length > 0);
+            },
+
+            get hasNoPoint() {
+                return !this.hasPoint;
+            },
+
+            get pointTypeBadge() {
+                if (this.pointData && this.pointData.isPackstation) {
+                    return this.packstationLabel || 'Packstation';
+                }
+                return this.parcelshopLabel || 'Parcelshop';
+            },
+
+            get pointName() {
+                return (this.pointData && this.pointData.name) ? this.pointData.name : '';
+            },
+
+            get pointStreet() {
+                return (this.pointData && this.pointData.street) ? this.pointData.street : '';
+            },
+
+            get pointPostcode() {
+                return (this.pointData && this.pointData.postcode) ? this.pointData.postcode : '';
+            },
+
+            get pointCity() {
+                return (this.pointData && this.pointData.city) ? this.pointData.city : '';
+            },
+
+            get pointSap() {
+                return (this.pointData && this.pointData.sap) ? this.pointData.sap : '';
+            },
+
+            get needsPostnummer() {
+                return Boolean(
+                    this.isGermanPackstationMethod ||
+                    (this.pointData && this.pointData.isPackstation && this.pointData.country === 'DE')
+                );
+            },
+
+            openModal() {
+                this.modalOpen = true;
+            },
+
+            closeModal() {
+                this.modalOpen = false;
+            },
+
+            onPostnummerInput(event) {
+                const val = (event && event.target) ? event.target.value : '';
+                this.updatePostnummer(val);
+            },
+
+            updatePostnummer(value) {
+                this.postnummer = value;
+                if (typeof this.$wire !== 'undefined' && typeof this.$wire.updatedPostnummer === 'function') {
+                    this.$wire.updatedPostnummer(value);
+                }
+            },
+
+            initMessageListener() {
+                const self = this;
+                window.addEventListener('message', function (event) {
+                    if (!event || !event.data || !self.modalOpen) {
+                        return;
+                    }
+
+                    let mapOrigin = '';
+                    try {
+                        mapOrigin = new URL(self.mapUrl, window.location.href).origin;
+                    } catch (e) {
+                        return;
+                    }
+
+                    if (event.origin !== mapOrigin) {
+                        return;
+                    }
+
+                    let rawData = event.data;
+                    if (typeof rawData === 'string') {
+                        try {
+                            rawData = JSON.parse(rawData);
+                        } catch (e) {
+                            return;
+                        }
+                    }
+
+                    if (rawData && typeof rawData === 'object' && rawData.sap) {
+                        const sap = rawData.sap || '';
+                        const name = rawData.name || sap;
+                        let street = rawData.street || '';
+                        const houseNo = rawData.streetNo || rawData.houseNo || '';
+                        if (houseNo && !street.includes(houseNo)) {
+                            street = (street ? street + ' ' : '') + houseNo;
+                        }
+                        const zip = rawData.zip || rawData.postalCode || '';
+                        const city = rawData.city || '';
+                        const country = (rawData.country || 'PL').toUpperCase();
+
+                        const isPackstation = Boolean(self.isPackstationMethod);
+                        const isPostfiliale = Boolean(self.isParcelShopMethod);
+
+                        self.pointData = {
+                            sap: sap,
+                            name: name,
+                            street: street,
+                            postcode: zip,
+                            city: city,
+                            isPackstation: isPackstation,
+                            isPostfiliale: isPostfiliale,
+                            country: country
+                        };
+
+                        if (typeof self.$wire !== 'undefined' && typeof self.$wire.selectPoint === 'function') {
+                            self.$wire.selectPoint({
+                                sap: sap,
+                                name: name,
+                                street: street,
+                                streetNo: houseNo,
+                                zip: zip,
+                                city: city,
+                                country: country,
+                                isPackstation: isPackstation,
+                                isPostfiliale: isPostfiliale,
+                                postnummer: self.postnummer || ''
+                            });
+                        }
+
+                        self.closeModal();
+                    }
+                }, false);
+            }
+        };
+    }
+
+    window.initDhlPointSelector = initDhlPointSelector;
+
+    if (typeof Alpine !== 'undefined' && typeof Alpine.data === 'function') {
+        Alpine.data('initDhlPointSelector', initDhlPointSelector);
+    } else {
+        window.addEventListener('alpine:init', () => {
+            Alpine.data('initDhlPointSelector', initDhlPointSelector);
+        }, { once: true });
+    }
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

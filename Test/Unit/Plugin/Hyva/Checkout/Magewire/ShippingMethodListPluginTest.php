@@ -1,0 +1,148 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DhlPoland\HyvaDhl\Test\Unit\Plugin\Hyva\Checkout\Magewire;
+
+use DhlPoland\Dhl\Model\Carrier;
+use DhlPoland\Dhl\Model\MethodCatalog;
+use DhlPoland\Dhl\Model\ServicePoint\ServicePointValidator;
+use DhlPoland\Dhl\Model\ServicePoint\ServicePointValueObject;
+use DhlPoland\HyvaDhl\Model\ServicePointAttributes;
+use DhlPoland\HyvaDhl\Plugin\Hyva\Checkout\Magewire\ShippingMethodListPlugin;
+use Hyva\Checkout\Magewire\Checkout\Shipping\MethodList;
+use Hyva\Checkout\Model\Magewire\Component\Evaluation\ErrorEventMessage;
+use Hyva\Checkout\Model\Magewire\Component\Evaluation\Success;
+use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
+use Magento\Checkout\Model\Session as CheckoutSession;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address as QuoteAddress;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+
+#[AllowMockObjectsWithoutExpectations]
+class ShippingMethodListPluginTest extends TestCase
+{
+    private CheckoutSession|MockObject $checkoutSessionMock;
+    private CartRepositoryInterface|MockObject $quoteRepositoryMock;
+    private ServicePointValidator|MockObject $validatorMock;
+    private MethodCatalog|MockObject $methodCatalogMock;
+    private LoggerInterface|MockObject $loggerMock;
+    private EvaluationResultFactory|MockObject $evaluationResultFactoryMock;
+    private MethodList|MockObject $subjectMock;
+    private Quote|MockObject $quoteMock;
+    private QuoteAddress|MockObject $shippingAddressMock;
+    private ShippingMethodListPlugin $plugin;
+
+    protected function setUp(): void
+    {
+        $this->checkoutSessionMock = $this->createMock(CheckoutSession::class);
+        $this->quoteRepositoryMock = $this->createMock(CartRepositoryInterface::class);
+        $this->validatorMock = $this->createMock(ServicePointValidator::class);
+        $this->methodCatalogMock = $this->createMock(MethodCatalog::class);
+        $this->loggerMock = $this->createMock(LoggerInterface::class);
+        $this->evaluationResultFactoryMock = $this->createMock(EvaluationResultFactory::class);
+        $this->subjectMock = $this->createMock(MethodList::class);
+        $this->quoteMock = $this->createMock(Quote::class);
+        $this->shippingAddressMock = $this->createMock(QuoteAddress::class);
+
+        $this->checkoutSessionMock->method('getQuote')->willReturn($this->quoteMock);
+        $this->quoteMock->method('getShippingAddress')->willReturn($this->shippingAddressMock);
+
+        $this->plugin = new ShippingMethodListPlugin(
+            $this->checkoutSessionMock,
+            $this->quoteRepositoryMock,
+            $this->validatorMock,
+            $this->methodCatalogMock,
+            $this->loggerMock
+        );
+    }
+
+    public function testAfterEvaluateCompletionPassesThroughWhenNonDhlMethod(): void
+    {
+        $this->subjectMock->method = 'flatrate_flatrate';
+        $successMock = $this->createMock(Success::class);
+
+        $result = $this->plugin->afterEvaluateCompletion(
+            $this->subjectMock,
+            $successMock,
+            $this->evaluationResultFactoryMock
+        );
+
+        $this->assertSame($successMock, $result);
+    }
+
+    public function testAfterEvaluateCompletionReturnsErrorWhenDhlPointValidationFails(): void
+    {
+        $this->subjectMock->method = 'dhlpoland_economy_box';
+        $this->methodCatalogMock->method('isServicePointMethod')->with('economy_box')->willReturn(true);
+
+        $this->validatorMock->expects($this->once())
+            ->method('validate')
+            ->willThrowException(new LocalizedException(__('Please select a DHL pickup point on the map.')));
+
+        $errorMock = $this->createMock(ErrorEventMessage::class);
+        $errorMock->expects($this->once())
+            ->method('withCustomEvent')
+            ->with(ServicePointAttributes::EVENT_SHIPPING_METHOD_ERROR)
+            ->willReturnSelf();
+        $errorMock->expects($this->once())
+            ->method('withMessage')
+            ->willReturnSelf();
+
+        $this->evaluationResultFactoryMock->expects($this->once())
+            ->method('createErrorMessageEvent')
+            ->willReturn($errorMock);
+
+        $result = $this->plugin->afterEvaluateCompletion(
+            $this->subjectMock,
+            $this->createMock(Success::class),
+            $this->evaluationResultFactoryMock
+        );
+
+        $this->assertSame($errorMock, $result);
+    }
+
+    public function testAfterUpdatedMethodClearsServicePointWhenNonPointMethodSelected(): void
+    {
+        $this->methodCatalogMock->method('isServicePointMethod')->with('parcel_polska')->willReturn(false);
+
+        $this->shippingAddressMock->method('getData')
+            ->with(ServicePointAttributes::FIELD_SERVICE_POINT_ID)
+            ->willReturn('BOX-123');
+
+        $savedData = [];
+        $this->shippingAddressMock->expects($this->atLeastOnce())
+            ->method('setData')
+            ->willReturnCallback(function ($key, $val = null) use (&$savedData) {
+                if (is_string($key)) {
+                    $savedData[$key] = $val;
+                }
+                return $this->shippingAddressMock;
+            });
+
+        $this->quoteRepositoryMock->expects($this->once())
+            ->method('save')
+            ->with($this->quoteMock);
+
+        $result = $this->plugin->afterUpdatedMethod($this->subjectMock, 'dhlpoland_parcel_polska');
+        $this->assertSame('dhlpoland_parcel_polska', $result);
+        $this->assertArrayHasKey(ServicePointAttributes::FIELD_SERVICE_POINT_ID, $savedData);
+        $this->assertNull($savedData[ServicePointAttributes::FIELD_SERVICE_POINT_ID]);
+    }
+
+    public function testAfterUpdatedMethodDoesNotClearWhenPointMethodSelected(): void
+    {
+        $this->methodCatalogMock->method('isServicePointMethod')->with('economy_box')->willReturn(true);
+
+        $this->shippingAddressMock->expects($this->never())->method('setData');
+        $this->quoteRepositoryMock->expects($this->never())->method('save');
+
+        $result = $this->plugin->afterUpdatedMethod($this->subjectMock, 'dhlpoland_economy_box');
+        $this->assertSame('dhlpoland_economy_box', $result);
+    }
+}

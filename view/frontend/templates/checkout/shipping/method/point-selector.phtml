@@ -1,0 +1,169 @@
+<?php
+
+declare(strict_types=1);
+
+use DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector;
+use DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel;
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\LucideIcons;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var PointSelector $magewire */
+/** @var PointSelectorViewModel $viewModel */
+
+$magewire = $block->getData('magewire');
+$viewModel = $block->getData('view_model');
+$shippingMethod = $block->getData('method');
+$methodCode = $shippingMethod ? $shippingMethod->getMethodCode() : '';
+$countryCode = $viewModel ? $viewModel->getDestinationCountry() : 'PL';
+$mapUrl = $viewModel ? $viewModel->getMapUrl($methodCode, $countryCode) : 'https://parcelshop.dhl.pl/mapa';
+$isGermanPackstation = $viewModel ? $viewModel->isGermanPackstation($countryCode, $methodCode) : false;
+$isPackstation = $viewModel ? $viewModel->isPackstation($methodCode) : false;
+$isParcelShop = $viewModel ? $viewModel->isParcelShop($methodCode) : false;
+
+$config = [
+    'mapUrl' => $mapUrl,
+    'isGermanPackstation' => $isGermanPackstation,
+    'isPackstation' => $isPackstation,
+    'isParcelShop' => $isParcelShop,
+    'methodCode' => $methodCode,
+    'packstationLabel' => (string) __('Packstation'),
+    'parcelshopLabel' => (string) __('Parcelshop'),
+    'pointData' => [
+        'sap' => (string) ($magewire->pointId ?? ''),
+        'name' => (string) ($magewire->pointName ?? ''),
+        'street' => (string) ($magewire->pointStreet ?? ''),
+        'postcode' => (string) ($magewire->pointPostcode ?? ''),
+        'city' => (string) ($magewire->pointCity ?? ''),
+        'isPackstation' => (bool) ($magewire->isPackstation ?? false),
+        'isPostfiliale' => (bool) ($magewire->isPostfiliale ?? false),
+        'country' => (string) ($magewire->country ?? 'PL'),
+    ],
+    'postnummer' => (string) ($magewire->postnummer ?? '')
+];
+
+/** @var LucideIcons $lucideIcons */
+$lucideIcons = $viewModels->require(LucideIcons::class);
+?>
+<div
+    x-data="initDhlPointSelector"
+    data-config="<?= $escaper->escapeHtmlAttr(json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?>"
+    class="dhl-carrier-wrapper dhl-point-selector-wrapper text-sm"
+>
+    <!-- State: No point selected yet -->
+    <div x-show="hasNoPoint" class="dhl-point-prompt-inline">
+        <button
+            type="button"
+            class="dhl-select-point-btn inline-flex items-center px-3 py-1.5 font-bold rounded bg-[#FFCC00] hover:bg-[#e6b800] border border-[#D2072A] text-[#D2072A] shadow-none"
+            @click="openModal"
+        >
+            <span><?= $escaper->escapeHtml(__('Select DHL pickup point')) ?></span>
+        </button>
+    </div>
+
+    <!-- State: Point is selected -->
+    <div x-show="hasPoint" class="dhl-point-selected-inline mt-2 p-2.5 rounded bg-[#FFCC00] border border-[#D2072A] text-[#D2072A]">
+        <p class="font-bold text-[#D2072A] mb-1">
+            <?= $escaper->escapeHtml(__('Selected DHL pickup point:')) ?>
+        </p>
+        <div class="leading-snug">
+            <strong class="font-bold text-[#D2072A]" x-text="pointName"></strong><br/>
+            <span x-text="pointStreet"></span><br/>
+            <span>
+                <span x-text="pointPostcode"></span>
+                <span x-text="pointCity"></span>
+            </span>
+        </div>
+
+        <!-- Optional Postnummer field for German Packstation delivery -->
+        <template x-if="needsPostnummer">
+            <div class="dhl-postnummer-field mt-2 pt-2 border-t border-[#D2072A]/30">
+                <label for="dhl-postnummer-input-<?= $escaper->escapeHtmlAttr($methodCode) ?>" class="block  font-bold text-[#D2072A]">
+                    <?= $escaper->escapeHtml(__('German Customer Number (Postnummer):')) ?>
+                    <span class="text-[#e02b27]">*</span>
+                </label>
+                <div class="mt-1 flex rounded-md shadow-sm max-w-xs">
+                    <input
+                        type="text"
+                        id="dhl-postnummer-input-<?= $escaper->escapeHtmlAttr($methodCode) ?>"
+                        name="dhl_postnummer"
+                        class="form-input block w-full rounded-md border-gray-300 text-sm text-gray-900"
+                        placeholder="12345678"
+                        maxlength="10"
+                        :value="postnummer"
+                        @input="onPostnummerInput"
+                    />
+                </div>
+                <p class="mt-1 text-[11px] text-[#D2072A]">
+                    <?= $escaper->escapeHtml(__('German Customer Number (Postnummer) is required for delivery to a German Packstation.')) ?>
+                </p>
+            </div>
+        </template>
+
+        <button
+            type="button"
+            class="dhl-select-point-btn mt-2 inline-flex items-center px-3 py-1.5 font-bold rounded bg-[#FFCC00] hover:bg-[#e6b800] border border-[#D2072A] text-[#D2072A] shadow-none"
+            @click="openModal"
+        >
+            <span><?= $escaper->escapeHtml(__('Change DHL pickup point')) ?></span>
+        </button>
+    </div>
+
+    <!-- Map Modal Dialog -->
+    <div
+        x-show="modalOpen"
+        x-cloak
+        class="fixed inset-0 z-50 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dhl-modal-title"
+    >
+        <!-- Backdrop -->
+        <div
+            class="fixed inset-0 bg-black/60 transition-opacity"
+            @click="closeModal"
+            aria-hidden="true"
+        ></div>
+
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- Modal Panel -->
+            <div
+                class="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full max-w-4xl"
+                @keydown.escape.window="closeModal"
+            >
+                <div
+                    class="flex items-center justify-between px-4 py-3 bg-[#FFCC00] border-b border-yellow-500"
+                    style="background-color: #FFCC00;"
+                >
+                    <h3 id="dhl-modal-title" class="text-base font-bold text-gray-900">
+                        <?= $escaper->escapeHtml(__('Select DHL Pickup Point')) ?>
+                    </h3>
+                    <button
+                        type="button"
+                        class="text-gray-700 hover:text-black p-1 rounded-full hover:bg-yellow-500/30"
+                        @click="closeModal"
+                        aria-label="<?= $escaper->escapeHtmlAttr(__('Close')) ?>"
+                    >
+                        <?= $lucideIcons->xHtml('w-5 h-5', 20, 20, ['aria-hidden' => 'true']) ?>
+                    </button>
+                </div>
+
+                <div class="relative w-full h-[70vh] min-h-[480px] bg-gray-100">
+                    <template x-if="modalOpen">
+                        <iframe
+                            :src="mapUrl"
+                            class="w-full h-full border-0"
+                            title="<?= $escaper->escapeHtmlAttr(__('Select DHL Pickup Point')) ?>"
+                        ></iframe>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

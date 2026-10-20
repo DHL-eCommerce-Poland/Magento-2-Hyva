@@ -1,0 +1,429 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="checkout.shipping.methods">
+            <!-- DHL Courier & Express methods (icons only) -->
+            <block name="checkout.shipping.method.dhlpoland_parcel_polska" as="dhlpoland_parcel_polska">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_parcel_polska_cod" as="dhlpoland_parcel_polska_cod">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_premium" as="dhlpoland_premium">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_premium_cod" as="dhlpoland_premium_cod">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_parcel_9" as="dhlpoland_parcel_9">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_parcel_9_cod" as="dhlpoland_parcel_9_cod">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_parcel_12" as="dhlpoland_parcel_12">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_parcel_12_cod" as="dhlpoland_parcel_12_cod">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_max_paleta" as="dhlpoland_max_paleta">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_max_paleta_cod" as="dhlpoland_max_paleta_cod">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect" as="dhlpoland_connect">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_cod" as="dhlpoland_connect_cod">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_plus" as="dhlpoland_connect_plus">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_plus_cod" as="dhlpoland_connect_plus_cod">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_pallet" as="dhlpoland_connect_pallet">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_pallet_cod" as="dhlpoland_connect_pallet_cod">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+
+            <!-- DHL Service Point methods (Icons + Magewire point selector view) -->
+            <block name="checkout.shipping.method.dhlpoland_economy_all"
+                   as="dhlpoland_economy_all"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_pop_portrait.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL Box &amp; POP</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_economy_all_cod"
+                   as="dhlpoland_economy_all_cod"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_pop_portrait.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL Box &amp; POP</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_economy_pop"
+                   as="dhlpoland_economy_pop"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_pop_portrait.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL POP</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_economy_pop_cod"
+                   as="dhlpoland_economy_pop_cod"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_pop_portrait.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL POP</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_economy_box"
+                   as="dhlpoland_economy_box"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_portrait.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL Box</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_economy_box_cod"
+                   as="dhlpoland_economy_box_cod"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_portrait.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL Box</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_parcelshop"
+                   as="dhlpoland_connect_parcelshop"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL ParcelShop</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_parcelshop_cod"
+                   as="dhlpoland_connect_parcelshop_cod"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL ParcelShop</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_packstation"
+                   as="dhlpoland_connect_packstation"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL Packstation</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+            <block name="checkout.shipping.method.dhlpoland_connect_packstation_cod"
+                   as="dhlpoland_connect_packstation_cod"
+                   template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
+                <arguments>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="class" xsi:type="string">w-16 inline-block</item>
+                                <item name="alt" xsi:type="string">DHL Packstation</item>
+                            </item>
+                        </item>
+                    </argument>
+                    <argument name="magewire" xsi:type="object">
+                        DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector
+                    </argument>
+                    <argument name="view_model" xsi:type="object">
+                        DhlPoland\HyvaDhl\ViewModel\Checkout\PointSelectorViewModel
+                    </argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+    </body>
+</page>

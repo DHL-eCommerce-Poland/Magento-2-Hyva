@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         colors="true"
+         columns="max"
+         beStrictAboutTestsThatDoNotTestAnything="false"
+         bootstrap="Test/bootstrap.php"
+         cacheDirectory=".phpunit.result.cache">
+    <testsuites>
+        <testsuite name="DhlPoland_HyvaDhl_Unit_Tests">
+            <directory>Test/Unit</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">Magewire</directory>
+            <directory suffix=".php">Plugin</directory>
+            <directory suffix=".php">ViewModel</directory>
+        </include>
+    </source>
+    <php>
+        <includePath>.</includePath>
+        <ini name="memory_limit" value="-1"/>
+        <ini name="date.timezone" value="UTC"/>
+    </php>
+</phpunit>

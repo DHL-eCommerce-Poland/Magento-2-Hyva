@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Framework\View\Element\Template;
+
+/** @var Template $block */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+$hyvaCsp = isset($viewModels) ? $viewModels->require(HyvaCsp::class) : null;
+?>
+<script>
+    try {
+        window.sessionStorage.removeItem('dhl_selected_service_points');
+        window.sessionStorage.removeItem('dhl_selected_service_point');
+    } catch (e) {
+        // Ignore storage access errors
+    }
+</script>
+<?php if ($hyvaCsp): ?>
+    <?php $hyvaCsp->registerInlineScript() ?>
+<?php endif; ?>
