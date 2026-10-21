@@ -9,7 +9,6 @@ use DhlPoland\Dhl\Model\MethodCatalog;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValidator;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValueObject;
 use DhlPoland\HyvaDhl\Model\Checkout\ServicePointSessionRegistry;
-use DhlPoland\HyvaDhl\Model\ServicePointAttributes;
 use Hyva\Checkout\Model\Magewire\Component\Evaluation\EvaluationResult;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationInterface;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
@@ -25,6 +24,8 @@ use Throwable;
  */
 class PointSelector extends Component implements EvaluationInterface
 {
+    public const EVENT_SHIPPING_METHOD_ERROR = 'shipping:method:error';
+    public const EVENT_SHIPPING_METHOD_SUCCESS = 'shipping:method:success';
     /**
      * @var array
      */
@@ -167,8 +168,8 @@ class PointSelector extends Component implements EvaluationInterface
                 || $this->methodCatalog->isParcelShopMethod($cleanMethodCode);
 
             $fallbackCountry = ($isPackstation || $isPostfiliale)
-                ? ServicePointAttributes::GERMANY_COUNTRY_CODE
-                : ($shippingAddress->getCountryId() ?: ServicePointAttributes::DEFAULT_COUNTRY);
+                ? ServicePointSessionRegistry::GERMANY_COUNTRY_CODE
+                : ($shippingAddress->getCountryId() ?: ServicePointSessionRegistry::DEFAULT_COUNTRY);
             $country = strtoupper(trim((string) ($pointData['country'] ?? $fallbackCountry)));
             $postnummer = trim((string) ($pointData['postnummer'] ?? $this->postnummer ?? ''));
 
@@ -184,50 +185,7 @@ class PointSelector extends Component implements EvaluationInterface
                 $country
             );
 
-            $shippingAddress->setData(
-                ServicePointAttributes::FIELD_SERVICE_POINT_ID,
-                $servicePoint->getId()
-            );
-            $shippingAddress->setData(
-                ServicePointAttributes::FIELD_SERVICE_POINT_NAME,
-                $servicePoint->getName()
-            );
-            $shippingAddress->setData(
-                ServicePointAttributes::FIELD_SERVICE_POINT_STREET,
-                $servicePoint->getStreet()
-            );
-            $shippingAddress->setData(
-                ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE,
-                $servicePoint->getPostcode()
-            );
-            $shippingAddress->setData(
-                ServicePointAttributes::FIELD_SERVICE_POINT_CITY,
-                $servicePoint->getCity()
-            );
-            $shippingAddress->setData(
-                ServicePointAttributes::FIELD_IS_PACKSTATION,
-                $servicePoint->isPackstation() ? 1 : 0
-            );
-            $shippingAddress->setData(
-                ServicePointAttributes::FIELD_IS_POSTFILIALE,
-                $servicePoint->isPostfiliale() ? 1 : 0
-            );
-            $shippingAddress->setData(
-                ServicePointAttributes::FIELD_POSTNUMMER,
-                $servicePoint->getPostnummer()
-            );
-
-            $extAttributes = $shippingAddress->getExtensionAttributes();
-            if ($extAttributes !== null && method_exists($extAttributes, 'setDhlServicePointId')) {
-                $extAttributes->setDhlServicePointId($servicePoint->getId());
-                $extAttributes->setDhlServicePointName($servicePoint->getName());
-                $extAttributes->setDhlServicePointStreet($servicePoint->getStreet());
-                $extAttributes->setDhlServicePointPostcode($servicePoint->getPostcode());
-                $extAttributes->setDhlServicePointCity($servicePoint->getCity());
-                $extAttributes->setDhlIsPackstation($servicePoint->isPackstation() ? 1 : 0);
-                $extAttributes->setDhlIsPostfiliale($servicePoint->isPostfiliale() ? 1 : 0);
-                $extAttributes->setDhlPostnummer($servicePoint->getPostnummer());
-            }
+            $this->sessionRegistry->applyToAddress($shippingAddress, $servicePoint);
 
             $this->pointId = $servicePoint->getId();
             $this->pointName = $servicePoint->getName();
@@ -262,22 +220,7 @@ class PointSelector extends Component implements EvaluationInterface
             if ($quote) {
                 $shippingAddress = $quote->getShippingAddress();
                 if ($shippingAddress) {
-                    foreach (ServicePointAttributes::ALL_FIELDS as $field) {
-                        $defaultValue = str_starts_with($field, 'dhl_is_') ? 0 : null;
-                        $shippingAddress->setData($field, $defaultValue);
-                    }
-
-                    $extAttributes = $shippingAddress->getExtensionAttributes();
-                    if ($extAttributes !== null && method_exists($extAttributes, 'setDhlServicePointId')) {
-                        $extAttributes->setDhlServicePointId(null);
-                        $extAttributes->setDhlServicePointName(null);
-                        $extAttributes->setDhlServicePointStreet(null);
-                        $extAttributes->setDhlServicePointPostcode(null);
-                        $extAttributes->setDhlServicePointCity(null);
-                        $extAttributes->setDhlIsPackstation(0);
-                        $extAttributes->setDhlIsPostfiliale(0);
-                        $extAttributes->setDhlPostnummer(null);
-                    }
+                    $this->sessionRegistry->clearAddressData($shippingAddress);
 
                     $fullMethodCode = (string) ($this->methodCode ?: $shippingAddress->getShippingMethod());
                     $this->sessionRegistry->removePointForMethod($fullMethodCode);
@@ -319,7 +262,19 @@ class PointSelector extends Component implements EvaluationInterface
             if ($quote) {
                 $shippingAddress = $quote->getShippingAddress();
                 if ($shippingAddress) {
-                    $shippingAddress->setData(ServicePointAttributes::FIELD_POSTNUMMER, $this->postnummer);
+                    $shippingAddress->setData(ServicePointSessionRegistry::FIELD_POSTNUMMER, $this->postnummer);
+
+                    $extAttributes = $shippingAddress->getExtensionAttributes();
+                    if ($extAttributes !== null && method_exists($extAttributes, 'setDhlPostnummer')) {
+                        $extAttributes->setDhlPostnummer($this->postnummer);
+                    }
+
+                    $currentPoint = $this->sessionRegistry->extractFromAddress($shippingAddress);
+                    if ($currentPoint !== null) {
+                        $fullMethodCode = (string) ($this->methodCode ?: $shippingAddress->getShippingMethod());
+                        $this->sessionRegistry->savePointForMethod($fullMethodCode, $currentPoint);
+                    }
+
                     $this->quoteRepository->save($quote);
                 }
             }
@@ -344,27 +299,22 @@ class PointSelector extends Component implements EvaluationInterface
     public function evaluateCompletion(EvaluationResultFactory $resultFactory): EvaluationResult
     {
         $errorMessageEvent = $resultFactory->createErrorMessageEvent();
-        $errorMessageEvent->withCustomEvent(ServicePointAttributes::EVENT_SHIPPING_METHOD_ERROR);
+        $errorMessageEvent->withCustomEvent(self::EVENT_SHIPPING_METHOD_ERROR);
 
         try {
             $quote = $this->sessionCheckout->getQuote();
             $shippingAddress = $quote?->getShippingAddress();
             if (!$shippingAddress) {
-                return $resultFactory->createSuccess([], ServicePointAttributes::EVENT_SHIPPING_METHOD_SUCCESS);
+                return $resultFactory->createSuccess([], self::EVENT_SHIPPING_METHOD_SUCCESS);
             }
 
-            $carrierCode = (string) $shippingAddress->getShippingCarrierCode();
             $fullMethodCode = (string) $shippingAddress->getShippingMethod();
-            if ($carrierCode === '') {
-                $carrierCode = Carrier::CODE;
-            }
-
             $cleanMethodCode = strtolower(trim($fullMethodCode));
             if (str_starts_with($cleanMethodCode, Carrier::CODE_PREFIX)) {
                 $cleanMethodCode = substr($cleanMethodCode, strlen(Carrier::CODE_PREFIX));
             }
 
-            $servicePoint = $this->buildServicePointFromAddress($shippingAddress);
+            $servicePoint = $this->sessionRegistry->extractFromAddress($shippingAddress);
 
             $this->servicePointValidator->validate(Carrier::CODE, $cleanMethodCode, $servicePoint);
         } catch (LocalizedException $exception) {
@@ -377,7 +327,7 @@ class PointSelector extends Component implements EvaluationInterface
             return $errorMessageEvent->withMessage((string) __('Please select a DHL pickup point on the map.'));
         }
 
-        return $resultFactory->createSuccess([], ServicePointAttributes::EVENT_SHIPPING_METHOD_SUCCESS);
+        return $resultFactory->createSuccess([], self::EVENT_SHIPPING_METHOD_SUCCESS);
     }
 
     /**
@@ -398,31 +348,19 @@ class PointSelector extends Component implements EvaluationInterface
                 return;
             }
 
-            $sap = trim((string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_ID) ?? ''));
-            $this->pointId = $sap !== '' ? $sap : null;
-            $this->pointName = (string) (
-                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_NAME) ?? ''
-            );
-            $this->pointStreet = (string) (
-                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_STREET) ?? ''
-            );
-            $this->pointPostcode = (string) (
-                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE) ?? ''
-            );
-            $this->pointCity = (string) (
-                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_CITY) ?? ''
-            );
-            $this->isPackstation = (bool) (
-                $shippingAddress->getData(ServicePointAttributes::FIELD_IS_PACKSTATION) ?? false
-            );
-            $this->isPostfiliale = (bool) (
-                $shippingAddress->getData(ServicePointAttributes::FIELD_IS_POSTFILIALE) ?? false
-            );
-            $this->postnummer = (string) (
-                $shippingAddress->getData(ServicePointAttributes::FIELD_POSTNUMMER) ?? ''
-            ) ?: null;
+            $point = $this->sessionRegistry->extractFromAddress($shippingAddress);
+            $this->pointId = $point?->getId();
+            $this->pointName = $point?->getName() ?? '';
+            $this->pointStreet = $point?->getStreet() ?? '';
+            $this->pointPostcode = $point?->getPostcode() ?? '';
+            $this->pointCity = $point?->getCity() ?? '';
+            $this->isPackstation = $point?->isPackstation() ?? false;
+            $this->isPostfiliale = $point?->isPostfiliale() ?? false;
+            $this->postnummer = $point !== null
+                ? $point->getPostnummer()
+                : ((string) ($shippingAddress->getData(ServicePointSessionRegistry::FIELD_POSTNUMMER) ?? '') ?: null);
             $this->country = strtoupper(
-                (string) ($shippingAddress->getCountryId() ?? ServicePointAttributes::DEFAULT_COUNTRY)
+                (string) ($shippingAddress->getCountryId() ?? ServicePointSessionRegistry::DEFAULT_COUNTRY)
             );
             $this->methodCode = (string) $shippingAddress->getShippingMethod();
         } catch (Throwable $exception) {
@@ -431,45 +369,5 @@ class PointSelector extends Component implements EvaluationInterface
                 ['exception' => $exception]
             );
         }
-    }
-
-    /**
-     * Construct ServicePointValueObject from quote shipping address data.
-     *
-     * @param mixed $shippingAddress
-     *
-     * @return ServicePointValueObject|null
-     */
-    private function buildServicePointFromAddress(mixed $shippingAddress): ?ServicePointValueObject
-    {
-        if (!$shippingAddress || !is_object($shippingAddress)) {
-            return null;
-        }
-
-        $sap = trim((string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_ID) ?? ''));
-        if ($sap === '') {
-            return null;
-        }
-
-        $name = trim((string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_NAME) ?? ''));
-        $street = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_STREET) ?? '');
-        $postcode = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE) ?? '');
-        $city = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_CITY) ?? '');
-        $isPackstation = (bool) ($shippingAddress->getData(ServicePointAttributes::FIELD_IS_PACKSTATION) ?? false);
-        $isPostfiliale = (bool) ($shippingAddress->getData(ServicePointAttributes::FIELD_IS_POSTFILIALE) ?? false);
-        $postnummer = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_POSTNUMMER) ?? '');
-        $country = strtoupper((string) ($shippingAddress->getCountryId() ?? ServicePointAttributes::DEFAULT_COUNTRY));
-
-        return new ServicePointValueObject(
-            $sap,
-            $name !== '' ? $name : $sap,
-            $street,
-            $postcode,
-            $city,
-            $isPackstation,
-            $isPostfiliale,
-            $postnummer !== '' ? $postnummer : null,
-            $country
-        );
     }
 }

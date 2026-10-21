@@ -15,8 +15,8 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
 <script>
     function initDhlPointSelector() {
         return {
-            baseUrl: 'https://parcelshop.dhl.pl/mapa',
-            mapUrl: 'https://parcelshop.dhl.pl/mapa',
+            baseUrl: '',
+            mapUrl: '',
             pointMapType: 'all',
             isCodMethod: false,
             countryCode: 'PL',
@@ -25,8 +25,6 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
             isParcelShopMethod: false,
             methodCode: '',
             modalOpen: false,
-            packstationLabel: 'Packstation',
-            parcelshopLabel: 'Parcelshop',
             pointData: {
                 sap: '',
                 name: '',
@@ -38,6 +36,7 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                 country: 'PL'
             },
             postnummer: '',
+            postnummerTimer: null,
 
             init() {
                 this.loadConfig();
@@ -56,12 +55,16 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                     if (config.pointMapType) this.pointMapType = config.pointMapType;
                     if (typeof config.isCodMethod !== 'undefined') this.isCodMethod = Boolean(config.isCodMethod);
                     if (config.countryCode) this.countryCode = config.countryCode;
-                    if (typeof config.isGermanPackstation !== 'undefined') this.isGermanPackstationMethod = Boolean(config.isGermanPackstation);
-                    if (typeof config.isPackstation !== 'undefined') this.isPackstationMethod = Boolean(config.isPackstation);
-                    if (typeof config.isParcelShop !== 'undefined') this.isParcelShopMethod = Boolean(config.isParcelShop);
+                    if (typeof config.isGermanPackstation !== 'undefined') {
+                        this.isGermanPackstationMethod = Boolean(config.isGermanPackstation);
+                    }
+                    if (typeof config.isPackstation !== 'undefined') {
+                        this.isPackstationMethod = Boolean(config.isPackstation);
+                    }
+                    if (typeof config.isParcelShop !== 'undefined') {
+                        this.isParcelShopMethod = Boolean(config.isParcelShop);
+                    }
                     if (config.methodCode) this.methodCode = config.methodCode;
-                    if (config.packstationLabel) this.packstationLabel = config.packstationLabel;
-                    if (config.parcelshopLabel) this.parcelshopLabel = config.parcelshopLabel;
                     this.postnummer = config.postnummer || '';
                     if (config.pointData && typeof config.pointData === 'object') {
                         this.pointData = {
@@ -94,42 +97,15 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                 observer.observe(this.$el, { attributes: true, attributeFilter: ['data-config'] });
             },
 
-            get hasPoint() {
+            hasPoint() {
                 return Boolean(this.pointData && this.pointData.sap && String(this.pointData.sap).trim().length > 0);
             },
 
-            get hasNoPoint() {
-                return !this.hasPoint;
+            hasNoPoint() {
+                return !this.hasPoint();
             },
 
-            get pointTypeBadge() {
-                if (this.pointData && this.pointData.isPackstation) {
-                    return this.packstationLabel || 'Packstation';
-                }
-                return this.parcelshopLabel || 'Parcelshop';
-            },
-
-            get pointName() {
-                return (this.pointData && this.pointData.name) ? this.pointData.name : '';
-            },
-
-            get pointStreet() {
-                return (this.pointData && this.pointData.street) ? this.pointData.street : '';
-            },
-
-            get pointPostcode() {
-                return (this.pointData && this.pointData.postcode) ? this.pointData.postcode : '';
-            },
-
-            get pointCity() {
-                return (this.pointData && this.pointData.city) ? this.pointData.city : '';
-            },
-
-            get pointSap() {
-                return (this.pointData && this.pointData.sap) ? this.pointData.sap : '';
-            },
-
-            get needsPostnummer() {
+            needsPostnummer() {
                 return Boolean(
                     this.isGermanPackstationMethod ||
                     this.isPackstationMethod ||
@@ -138,8 +114,13 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
             },
 
             getMapIframeUrl() {
-                const baseUrl = this.baseUrl || 'https://parcelshop.dhl.pl/mapa';
-                let country = (this.pointData && this.pointData.country) ? this.pointData.country : (this.countryCode || 'PL');
+                const baseUrl = this.baseUrl;
+                if (!baseUrl) {
+                    return this.mapUrl;
+                }
+                let country = (this.pointData && this.pointData.country)
+                    ? this.pointData.country
+                    : (this.countryCode || 'PL');
 
                 const formCountry = document.querySelector('select[name="country_id"]')?.value
                     || document.querySelector('[name="country_id"]')?.value;
@@ -170,9 +151,13 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                     }
 
                     if (this.pointMapType === 'box') {
-                        params.push('show_on_map_parcelshop=N&show_on_map_parcelshop_late=N&show_on_map_parcelstation=T');
+                        params.push(
+                            'show_on_map_parcelshop=N&show_on_map_parcelshop_late=N&show_on_map_parcelstation=T'
+                        );
                     } else if (this.pointMapType === 'pop') {
-                        params.push('show_on_map_parcelshop=T&show_on_map_parcelshop_late=N&show_on_map_parcelstation=N');
+                        params.push(
+                            'show_on_map_parcelshop=T&show_on_map_parcelshop_late=N&show_on_map_parcelstation=N'
+                        );
                     }
                 }
 
@@ -191,6 +176,21 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
 
             onPostnummerInput(event) {
                 const val = (event && event.target) ? event.target.value : '';
+                this.postnummer = val;
+                if (this.postnummerTimer) {
+                    clearTimeout(this.postnummerTimer);
+                }
+                this.postnummerTimer = setTimeout(() => {
+                    this.updatePostnummer(val);
+                }, 400);
+            },
+
+            onPostnummerBlur(event) {
+                const val = (event && event.target) ? event.target.value : this.postnummer;
+                if (this.postnummerTimer) {
+                    clearTimeout(this.postnummerTimer);
+                    this.postnummerTimer = null;
+                }
                 this.updatePostnummer(val);
             },
 
@@ -238,7 +238,10 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                         }
                         const zip = rawData.zip || rawData.postalCode || '';
                         const city = rawData.city || '';
-                        const defaultCountry = (self.isGermanPackstationMethod || self.isPackstationMethod || self.isParcelShopMethod) ? 'DE' : 'PL';
+                        const isIntlPoint = self.isGermanPackstationMethod
+                            || self.isPackstationMethod
+                            || self.isParcelShopMethod;
+                        const defaultCountry = isIntlPoint ? 'DE' : 'PL';
                         const country = (rawData.country || defaultCountry).toUpperCase();
 
                         const isPackstation = Boolean(self.isPackstationMethod);

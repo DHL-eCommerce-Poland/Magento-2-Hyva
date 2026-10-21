@@ -16,21 +16,24 @@ use Magento\Framework\View\Element\Template;
 /** @var PointSelectorViewModel $viewModel */
 
 $magewire = $block->getData('magewire');
-$viewModel = $block->getData('view_model');
+$viewModel = $block->getData('view_model') ?: $viewModels->require(PointSelectorViewModel::class);
 $methodCode = (string) ($block->getData('method_code') ?: $block->getBlockAlias());
-$isPackstation = $viewModel ? $viewModel->isPackstation($methodCode) : false;
-$isParcelShop = $viewModel ? $viewModel->isParcelShop($methodCode) : false;
-$countryCode = $viewModel ? $viewModel->getDestinationCountry() : 'PL';
+if (!$viewModel->isServicePointRequired($methodCode)) {
+    return;
+}
+$isPackstation = $viewModel->isPackstation($methodCode);
+$isParcelShop = $viewModel->isParcelShop($methodCode);
+$countryCode = $viewModel->getDestinationCountry();
 if (($isPackstation || $isParcelShop) && $countryCode === 'PL') {
     $countryCode = 'DE';
 }
-$mapUrl = $viewModel ? $viewModel->getMapUrl($methodCode, $countryCode) : 'https://parcelshop.dhl.pl/mapa';
-$isGermanPackstation = $viewModel ? $viewModel->isGermanPackstation($countryCode, $methodCode) : false;
-$pointMapType = $viewModel ? $viewModel->getPointMapType($methodCode) : 'all';
-$isCodMethod = $viewModel ? $viewModel->isCodMethod($methodCode) : false;
+$mapUrl = $viewModel->getMapUrl($methodCode, $countryCode);
+$isGermanPackstation = $viewModel->isGermanPackstation($countryCode, $methodCode);
+$pointMapType = $viewModel->getPointMapType($methodCode);
+$isCodMethod = $viewModel->isCodMethod($methodCode);
 
 $config = [
-    'baseUrl' => $viewModel ? $viewModel->getBaseMapUrl() : 'https://parcelshop.dhl.pl/mapa',
+    'baseUrl' => $viewModel->getBaseMapUrl(),
     'mapUrl' => $mapUrl,
     'pointMapType' => $pointMapType,
     'isCodMethod' => $isCodMethod,
@@ -39,8 +42,6 @@ $config = [
     'isParcelShop' => $isParcelShop,
     'methodCode' => $methodCode,
     'countryCode' => $countryCode,
-    'packstationLabel' => (string) __('Packstation'),
-    'parcelshopLabel' => (string) __('Parcelshop'),
     'pointData' => [
         'sap' => (string) ($magewire->pointId ?? ''),
         'name' => (string) ($magewire->pointName ?? ''),
@@ -53,20 +54,27 @@ $config = [
     ],
     'postnummer' => (string) ($magewire->postnummer ?? '')
 ];
+$encodedConfig = $viewModel->encodeConfig($config);
+$hasSelectedPoint = trim((string) ($magewire->pointId ?? '')) !== '';
 
 /** @var LucideIcons $lucideIcons */
 $lucideIcons = $viewModels->require(LucideIcons::class);
 ?>
 <div
     x-data="initDhlPointSelector"
-    data-config="<?= $escaper->escapeHtmlAttr(json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?>"
+    data-config="<?= $escaper->escapeHtmlAttr($encodedConfig) ?>"
     class="dhl-carrier-wrapper dhl-point-selector-wrapper text-sm"
 >
     <!-- State: No point selected yet -->
-    <div x-show="hasNoPoint" class="dhl-point-prompt-inline">
+    <div
+        x-show="hasNoPoint"
+        <?= $hasSelectedPoint ? 'style="display: none;"' : '' ?>
+        class="dhl-point-prompt-inline"
+    >
         <button
             type="button"
-            class="dhl-select-point-btn inline-flex items-center px-3 py-1.5 font-bold rounded bg-dhl-yellow hover:bg-dhl-yellow-hover border border-dhl-red text-dhl-red shadow-none"
+            class="dhl-select-point-btn inline-flex items-center px-3 py-1.5 font-bold rounded
+                   bg-dhl-yellow hover:bg-dhl-yellow-hover border border-dhl-red text-dhl-red shadow-none"
             @click="openModal"
         >
             <span><?= $escaper->escapeHtml(__('Select DHL pickup point')) ?></span>
@@ -74,23 +82,38 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
     </div>
 
     <!-- State: Point is selected -->
-    <div x-show="hasPoint" class="dhl-point-selected-inline mt-2 p-2.5 rounded bg-dhl-yellow border border-dhl-red text-dhl-red">
+    <div
+        x-show="hasPoint"
+        <?= !$hasSelectedPoint ? 'style="display: none;"' : '' ?>
+        class="dhl-point-selected-inline mt-2 p-2.5 rounded bg-dhl-yellow border border-dhl-red text-dhl-red"
+    >
         <p class="font-bold text-dhl-red mb-1">
             <?= $escaper->escapeHtml(__('Selected DHL pickup point:')) ?>
         </p>
         <div class="leading-snug">
-            <strong class="font-bold text-dhl-red" x-text="pointName"></strong><br/>
-            <span x-text="pointStreet"></span><br/>
+            <strong class="font-bold text-dhl-red" x-text="pointData.name">
+                <?= $escaper->escapeHtml((string) ($magewire->pointName ?? '')) ?>
+            </strong><br/>
+            <span x-text="pointData.street">
+                <?= $escaper->escapeHtml((string) ($magewire->pointStreet ?? '')) ?>
+            </span><br/>
             <span>
-                <span x-text="pointPostcode"></span>
-                <span x-text="pointCity"></span>
+                <span x-text="pointData.postcode">
+                    <?= $escaper->escapeHtml((string) ($magewire->pointPostcode ?? '')) ?>
+                </span>
+                <span x-text="pointData.city">
+                    <?= $escaper->escapeHtml((string) ($magewire->pointCity ?? '')) ?>
+                </span>
             </span>
         </div>
 
         <!-- Optional Postnummer field for German Packstation delivery -->
         <template x-if="needsPostnummer">
             <div class="dhl-postnummer-field mt-2 pt-2 border-t border-dhl-red/30">
-                <label for="dhl-postnummer-input-<?= $escaper->escapeHtmlAttr($methodCode) ?>" class="block font-bold text-dhl-red">
+                <label
+                    for="dhl-postnummer-input-<?= $escaper->escapeHtmlAttr($methodCode) ?>"
+                    class="block font-bold text-dhl-red"
+                >
                     <?= $escaper->escapeHtml(__('German Customer Number (Postnummer):')) ?>
                     <span class="text-red-600">*</span>
                 </label>
@@ -104,17 +127,16 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
                         maxlength="10"
                         :value="postnummer"
                         @input="onPostnummerInput"
+                        @change="onPostnummerBlur"
                     />
                 </div>
-                <p class="mt-1 text-[11px] text-dhl-red">
-                    <?= $escaper->escapeHtml(__('German Customer Number (Postnummer) is required for delivery to a German Packstation.')) ?>
-                </p>
             </div>
         </template>
 
         <button
             type="button"
-            class="dhl-select-point-btn mt-2 inline-flex items-center px-3 py-1.5 font-bold rounded bg-dhl-yellow hover:bg-dhl-yellow-hover border border-dhl-red text-dhl-red shadow-none"
+            class="dhl-select-point-btn mt-2 inline-flex items-center px-3 py-1.5 font-bold rounded
+                   bg-dhl-yellow hover:bg-dhl-yellow-hover border border-dhl-red text-dhl-red shadow-none"
             @click="openModal"
         >
             <span><?= $escaper->escapeHtml(__('Change DHL pickup point')) ?></span>
@@ -142,7 +164,8 @@ $lucideIcons = $viewModels->require(LucideIcons::class);
 
             <!-- Modal Panel -->
             <div
-                class="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle w-[92vw] max-w-[1100px]"
+                class="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden
+                       shadow-2xl transform transition-all sm:my-8 sm:align-middle w-[92vw] max-w-[1100px]"
                 @keydown.escape.window="closeModal"
             >
                 <div

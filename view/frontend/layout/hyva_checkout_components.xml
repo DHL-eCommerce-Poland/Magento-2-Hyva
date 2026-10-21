@@ -221,7 +221,9 @@
                     <argument name="method_code" xsi:type="string">dhlpoland_economy_all</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
-                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_pop_portrait.png</item>
+                            <item name="src" xsi:type="string">
+                                DhlPoland_HyvaDhl::images/logo_dhl_box_pop_portrait.png
+                            </item>
                             <item name="attributes" xsi:type="array">
                                 <item name="class" xsi:type="string">w-16 inline-block</item>
                                 <item name="alt" xsi:type="string">DHL Box &amp; POP</item>
@@ -243,7 +245,9 @@
                     <argument name="method_code" xsi:type="string">dhlpoland_economy_all_cod</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
-                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_pop_portrait.png</item>
+                            <item name="src" xsi:type="string">
+                                DhlPoland_HyvaDhl::images/logo_dhl_box_pop_portrait.png
+                            </item>
                             <item name="attributes" xsi:type="array">
                                 <item name="class" xsi:type="string">w-16 inline-block</item>
                                 <item name="alt" xsi:type="string">DHL Box &amp; POP</item>
@@ -265,7 +269,9 @@
                     <argument name="method_code" xsi:type="string">dhlpoland_economy_pop</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
-                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_pop_portrait.png</item>
+                            <item name="src" xsi:type="string">
+                                DhlPoland_HyvaDhl::images/logo_dhl_pop_portrait.png
+                            </item>
                             <item name="attributes" xsi:type="array">
                                 <item name="class" xsi:type="string">w-16 inline-block</item>
                                 <item name="alt" xsi:type="string">DHL POP</item>
@@ -287,7 +293,9 @@
                     <argument name="method_code" xsi:type="string">dhlpoland_economy_pop_cod</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
-                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_pop_portrait.png</item>
+                            <item name="src" xsi:type="string">
+                                DhlPoland_HyvaDhl::images/logo_dhl_pop_portrait.png
+                            </item>
                             <item name="attributes" xsi:type="array">
                                 <item name="class" xsi:type="string">w-16 inline-block</item>
                                 <item name="alt" xsi:type="string">DHL POP</item>
@@ -309,7 +317,9 @@
                     <argument name="method_code" xsi:type="string">dhlpoland_economy_box</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
-                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_portrait.png</item>
+                            <item name="src" xsi:type="string">
+                                DhlPoland_HyvaDhl::images/logo_dhl_box_portrait.png
+                            </item>
                             <item name="attributes" xsi:type="array">
                                 <item name="class" xsi:type="string">w-16 inline-block</item>
                                 <item name="alt" xsi:type="string">DHL Box</item>
@@ -331,7 +341,9 @@
                     <argument name="method_code" xsi:type="string">dhlpoland_economy_box_cod</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
-                            <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_portrait.png</item>
+                            <item name="src" xsi:type="string">
+                                DhlPoland_HyvaDhl::images/logo_dhl_box_portrait.png
+                            </item>
                             <item name="attributes" xsi:type="array">
                                 <item name="class" xsi:type="string">w-16 inline-block</item>
                                 <item name="alt" xsi:type="string">DHL Box</item>

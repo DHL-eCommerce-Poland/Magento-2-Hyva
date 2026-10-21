@@ -10,7 +10,6 @@ use DhlPoland\Dhl\Model\ServicePoint\ServicePointValidator;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValueObject;
 use DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector;
 use DhlPoland\HyvaDhl\Model\Checkout\ServicePointSessionRegistry;
-use DhlPoland\HyvaDhl\Model\ServicePointAttributes;
 use Hyva\Checkout\Model\Magewire\Component\Evaluation\ErrorEventMessage;
 use Hyva\Checkout\Model\Magewire\Component\Evaluation\Success;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
@@ -83,8 +82,11 @@ class PointSelectorTest extends TestCase
         $this->quoteRepositoryMock = $this->createMock(CartRepositoryInterface::class);
         $this->validatorMock = $this->createMock(ServicePointValidator::class);
         $this->methodCatalogMock = $this->createMock(MethodCatalog::class);
-        $this->sessionRegistryMock = $this->createMock(ServicePointSessionRegistry::class);
         $this->loggerMock = $this->createMock(LoggerInterface::class);
+        $this->sessionRegistryMock = $this->getMockBuilder(ServicePointSessionRegistry::class)
+            ->setConstructorArgs([$this->checkoutSessionMock, $this->loggerMock])
+            ->onlyMethods(['getPointForMethod', 'savePointForMethod', 'removePointForMethod', 'clear'])
+            ->getMock();
         $this->evaluationResultFactoryMock = $this->createMock(EvaluationResultFactory::class);
         $this->quoteMock = $this->createMock(Quote::class);
         $this->shippingAddressMock = $this->createMock(QuoteAddress::class);
@@ -106,14 +108,14 @@ class PointSelectorTest extends TestCase
     {
         $this->shippingAddressMock->method('getData')->willReturnCallback(function (string $key) {
             return match ($key) {
-                ServicePointAttributes::FIELD_SERVICE_POINT_ID => 'POP-WAW-123',
-                ServicePointAttributes::FIELD_SERVICE_POINT_NAME => 'Żabka Marszałkowska',
-                ServicePointAttributes::FIELD_SERVICE_POINT_STREET => 'Marszałkowska 10',
-                ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE => '00-001',
-                ServicePointAttributes::FIELD_SERVICE_POINT_CITY => 'Warszawa',
-                ServicePointAttributes::FIELD_IS_PACKSTATION => 1,
-                ServicePointAttributes::FIELD_IS_POSTFILIALE => 0,
-                ServicePointAttributes::FIELD_POSTNUMMER => '12345678',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID => 'POP-WAW-123',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_NAME => 'Żabka Marszałkowska',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_STREET => 'Marszałkowska 10',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_POSTCODE => '00-001',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_CITY => 'Warszawa',
+                ServicePointSessionRegistry::FIELD_IS_PACKSTATION => 1,
+                ServicePointSessionRegistry::FIELD_IS_POSTFILIALE => 0,
+                ServicePointSessionRegistry::FIELD_POSTNUMMER => '12345678',
                 default => null,
             };
         });
@@ -177,14 +179,18 @@ class PointSelectorTest extends TestCase
         $this->assertTrue($this->pointSelector->isPackstation);
         $this->assertFalse($this->pointSelector->isPostfiliale);
 
-        $this->assertSame('BOX-KRK-999', $savedData[ServicePointAttributes::FIELD_SERVICE_POINT_ID] ?? null);
-        $this->assertSame('Floriańska 15', $savedData[ServicePointAttributes::FIELD_SERVICE_POINT_STREET] ?? null);
+        $this->assertSame('BOX-KRK-999', $savedData[ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID] ?? null);
+        $this->assertSame('Floriańska 15', $savedData[ServicePointSessionRegistry::FIELD_SERVICE_POINT_STREET] ?? null);
     }
 
     public function testClearPointClearsAddressDataAndQuote(): void
     {
         $this->pointSelector->pointId = 'BOX-KRK-999';
         $this->pointSelector->pointName = 'DHL Box';
+
+        $this->shippingAddressMock->method('getData')
+            ->with(ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID)
+            ->willReturn('BOX-KRK-999');
 
         $savedData = [];
         $this->shippingAddressMock->expects($this->atLeastOnce())
@@ -209,14 +215,30 @@ class PointSelectorTest extends TestCase
 
         $this->assertNull($this->pointSelector->pointId);
         $this->assertNull($this->pointSelector->pointName);
-        $this->assertNull($savedData[ServicePointAttributes::FIELD_SERVICE_POINT_ID]);
+        $this->assertNull($savedData[ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID]);
     }
 
     public function testUpdatedPostnummerSavesToAddressAndQuote(): void
     {
+        $this->shippingAddressMock->method('getData')->willReturnCallback(function (string $key) {
+            return match ($key) {
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID => 'PS-DE-100',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_NAME => 'Packstation 100',
+                ServicePointSessionRegistry::FIELD_IS_PACKSTATION => 1,
+                ServicePointSessionRegistry::FIELD_POSTNUMMER => '98765432',
+                default => null,
+            };
+        });
+        $this->shippingAddressMock->method('getCountryId')->willReturn('DE');
+        $this->shippingAddressMock->method('getShippingMethod')->willReturn('dhlpoland_connect_packstation');
+
         $this->shippingAddressMock->expects($this->once())
             ->method('setData')
-            ->with(ServicePointAttributes::FIELD_POSTNUMMER, '98765432');
+            ->with(ServicePointSessionRegistry::FIELD_POSTNUMMER, '98765432');
+
+        $this->sessionRegistryMock->expects($this->once())
+            ->method('savePointForMethod')
+            ->with('dhlpoland_connect_packstation', $this->isInstanceOf(ServicePointValueObject::class));
 
         $this->quoteRepositoryMock->expects($this->once())
             ->method('save')
@@ -232,11 +254,11 @@ class PointSelectorTest extends TestCase
         $this->shippingAddressMock->method('getShippingMethod')->willReturn('dhlpoland_economy_box');
         $this->shippingAddressMock->method('getData')->willReturnCallback(function (string $key) {
             return match ($key) {
-                ServicePointAttributes::FIELD_SERVICE_POINT_ID => 'BOX-123',
-                ServicePointAttributes::FIELD_SERVICE_POINT_NAME => 'Box',
-                ServicePointAttributes::FIELD_SERVICE_POINT_STREET => 'Street 1',
-                ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE => '00-001',
-                ServicePointAttributes::FIELD_SERVICE_POINT_CITY => 'City',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID => 'BOX-123',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_NAME => 'Box',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_STREET => 'Street 1',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_POSTCODE => '00-001',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_CITY => 'City',
                 default => null,
             };
         });
@@ -265,7 +287,7 @@ class PointSelectorTest extends TestCase
         $errorMock = $this->createMock(ErrorEventMessage::class);
         $errorMock->expects($this->once())
             ->method('withCustomEvent')
-            ->with(ServicePointAttributes::EVENT_SHIPPING_METHOD_ERROR)
+            ->with(PointSelector::EVENT_SHIPPING_METHOD_ERROR)
             ->willReturnSelf();
         $errorMock->expects($this->once())
             ->method('withMessage')
@@ -283,8 +305,8 @@ class PointSelectorTest extends TestCase
     {
         $this->shippingAddressMock->method('getData')->willReturnCallback(function (string $key) {
             return match ($key) {
-                ServicePointAttributes::FIELD_SERVICE_POINT_ID => 'POP-KRK-1',
-                ServicePointAttributes::FIELD_SERVICE_POINT_NAME => 'POP Kraków',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID => 'POP-KRK-1',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_NAME => 'POP Kraków',
                 default => null,
             };
         });
@@ -302,7 +324,7 @@ class PointSelectorTest extends TestCase
 
         $this->shippingAddressMock->method('getData')->willReturnCallback(function (string $key) {
             return match ($key) {
-                ServicePointAttributes::FIELD_SERVICE_POINT_ID => '',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID => '',
                 default => null,
             };
         });

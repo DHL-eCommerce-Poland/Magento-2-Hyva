@@ -14,6 +14,7 @@
     <source>
         <include>
             <directory suffix=".php">Magewire</directory>
+            <directory suffix=".php">Model</directory>
             <directory suffix=".php">Plugin</directory>
             <directory suffix=".php">ViewModel</directory>
         </include>

@@ -8,8 +8,9 @@ use DhlPoland\Dhl\Model\Carrier;
 use DhlPoland\Dhl\Model\Checkout\ConfigProvider;
 use DhlPoland\Dhl\Model\MethodCatalog;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValidator;
-use DhlPoland\HyvaDhl\Model\ServicePointAttributes;
+use DhlPoland\HyvaDhl\Model\Checkout\ServicePointSessionRegistry;
 use Magento\Checkout\Model\Session as CheckoutSession;
+use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -20,12 +21,14 @@ class PointSelectorViewModel implements ArgumentInterface
      * @param MethodCatalog $methodCatalog
      * @param ServicePointValidator $servicePointValidator
      * @param CheckoutSession $checkoutSession
+     * @param SerializerInterface $serializer
      * @param LoggerInterface $logger
      */
     public function __construct(
         private readonly MethodCatalog $methodCatalog,
         private readonly ServicePointValidator $servicePointValidator,
         private readonly CheckoutSession $checkoutSession,
+        private readonly SerializerInterface $serializer,
         private readonly LoggerInterface $logger
     ) {
     }
@@ -53,7 +56,7 @@ class PointSelectorViewModel implements ArgumentInterface
             );
         }
 
-        return ServicePointAttributes::DEFAULT_COUNTRY;
+        return ServicePointSessionRegistry::DEFAULT_COUNTRY;
     }
 
     /**
@@ -84,11 +87,11 @@ class PointSelectorViewModel implements ArgumentInterface
         $isParcelShop = $this->methodCatalog->isParcelShopMethod($cleanMethod);
 
         $country = strtoupper(trim((string) ($countryCode ?: $this->getDestinationCountry())));
-        if ($country === '' || $country === ServicePointAttributes::DEFAULT_COUNTRY) {
+        if ($country === '' || $country === ServicePointSessionRegistry::DEFAULT_COUNTRY) {
             if ($isPackstation || $isParcelShop) {
-                $country = ServicePointAttributes::GERMANY_COUNTRY_CODE;
+                $country = ServicePointSessionRegistry::GERMANY_COUNTRY_CODE;
             } else {
-                $country = ServicePointAttributes::DEFAULT_COUNTRY;
+                $country = ServicePointSessionRegistry::DEFAULT_COUNTRY;
             }
         }
 
@@ -105,7 +108,7 @@ class PointSelectorViewModel implements ArgumentInterface
 
         $params = [];
 
-        if ($country !== ServicePointAttributes::DEFAULT_COUNTRY) {
+        if ($country !== ServicePointSessionRegistry::DEFAULT_COUNTRY) {
             $params[] = 'country=' . urlencode($country);
 
             if ($isPackstation) {
@@ -165,8 +168,7 @@ class PointSelectorViewModel implements ArgumentInterface
      */
     public function isCodMethod(string $methodCode): bool
     {
-        $clean = $this->normalizeMethodCode($methodCode);
-        return str_ends_with($clean, '_cod') || str_contains($clean, '_cod');
+        return $this->methodCatalog->isCodMethod($methodCode);
     }
 
     /**
@@ -219,63 +221,19 @@ class PointSelectorViewModel implements ArgumentInterface
     public function isGermanPackstation(?string $countryCode, string $methodCode): bool
     {
         $country = strtoupper(trim((string) ($countryCode ?: $this->getDestinationCountry())));
-        return $country === ServicePointAttributes::GERMANY_COUNTRY_CODE && $this->isPackstation($methodCode);
+        return $country === ServicePointSessionRegistry::GERMANY_COUNTRY_CODE && $this->isPackstation($methodCode);
     }
 
     /**
-     * Retrieve currently selected DHL service point from active quote shipping address.
+     * Serialize configuration array into JSON string using Magento SerializerInterface.
      *
-     * @return array|null
+     * @param array $config
+     *
+     * @return string
      */
-    public function getSelectedPoint(): ?array
+    public function encodeConfig(array $config): string
     {
-        try {
-            $quote = $this->checkoutSession->getQuote();
-            if (!$quote) {
-                return null;
-            }
-
-            $shippingAddress = $quote->getShippingAddress();
-            if (!$shippingAddress) {
-                return null;
-            }
-
-            $sap = trim((string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_ID) ?? ''));
-            if ($sap === '') {
-                return null;
-            }
-
-            $name = trim((string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_NAME) ?? ''));
-            $street = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_STREET) ?? '');
-            $postcode = (string) (
-                $shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_POSTCODE) ?? ''
-            );
-            $city = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_SERVICE_POINT_CITY) ?? '');
-            $isPackstation = (bool) ($shippingAddress->getData(ServicePointAttributes::FIELD_IS_PACKSTATION) ?? false);
-            $isPostfiliale = (bool) ($shippingAddress->getData(ServicePointAttributes::FIELD_IS_POSTFILIALE) ?? false);
-            $postnummer = (string) ($shippingAddress->getData(ServicePointAttributes::FIELD_POSTNUMMER) ?? '');
-            $country = strtoupper(
-                (string) ($shippingAddress->getCountryId() ?? ServicePointAttributes::DEFAULT_COUNTRY)
-            );
-
-            return [
-                'sap' => $sap,
-                'name' => $name !== '' ? $name : $sap,
-                'street' => $street,
-                'postcode' => $postcode,
-                'city' => $city,
-                'isPackstation' => $isPackstation,
-                'isPostfiliale' => $isPostfiliale,
-                'postnummer' => $postnummer,
-                'country' => $country,
-            ];
-        } catch (Throwable $exception) {
-            $this->logger->debug(
-                'DHL Hyvä: Unable to read selected service point from quote: ' . $exception->getMessage(),
-                ['exception' => $exception]
-            );
-            return null;
-        }
+        return (string) $this->serializer->serialize($config);
     }
 
     /**

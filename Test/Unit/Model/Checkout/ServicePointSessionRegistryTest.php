@@ -9,6 +9,7 @@ use DhlPoland\Dhl\Model\ServicePoint\ServicePointValueObject;
 use DhlPoland\HyvaDhl\Model\Checkout\ServicePointSessionRegistry;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address as QuoteAddress;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -184,5 +185,90 @@ class ServicePointSessionRegistryTest extends TestCase
         // Current quote is '100', stored is '99'
         $point = $this->registry->getPointForMethod('dhlpoland_economy_box');
         $this->assertNull($point);
+    }
+
+    public function testExtractFromAddressReturnsNullWhenNoPointId(): void
+    {
+        $addressMock = $this->createMock(QuoteAddress::class);
+        $addressMock->method('getData')
+            ->with(ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID)
+            ->willReturn('');
+
+        $this->assertNull($this->registry->extractFromAddress($addressMock));
+        $this->assertNull($this->registry->extractFromAddress(null));
+    }
+
+    public function testExtractFromAddressBuildsValueObject(): void
+    {
+        $addressMock = $this->createMock(QuoteAddress::class);
+        $addressMock->method('getData')->willReturnCallback(function (string $key) {
+            return match ($key) {
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID => 'POP-123',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_NAME => 'Point Name',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_STREET => 'Main St 1',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_POSTCODE => '00-001',
+                ServicePointSessionRegistry::FIELD_SERVICE_POINT_CITY => 'Warsaw',
+                ServicePointSessionRegistry::FIELD_IS_PACKSTATION => 1,
+                ServicePointSessionRegistry::FIELD_IS_POSTFILIALE => 0,
+                ServicePointSessionRegistry::FIELD_POSTNUMMER => '12345678',
+                default => null,
+            };
+        });
+        $addressMock->method('getCountryId')->willReturn('de');
+
+        $point = $this->registry->extractFromAddress($addressMock);
+
+        $this->assertNotNull($point);
+        $this->assertSame('POP-123', $point->getId());
+        $this->assertSame('Point Name', $point->getName());
+        $this->assertSame('Main St 1', $point->getStreet());
+        $this->assertSame('00-001', $point->getPostcode());
+        $this->assertSame('Warsaw', $point->getCity());
+        $this->assertTrue($point->isPackstation());
+        $this->assertFalse($point->isPostfiliale());
+        $this->assertSame('12345678', $point->getPostnummer());
+        $this->assertSame('DE', $point->getCountry());
+    }
+
+    public function testApplyToAddressAndClearAddressData(): void
+    {
+        $addressMock = $this->createMock(QuoteAddress::class);
+        $savedData = [];
+        $addressMock->method('setData')
+            ->willReturnCallback(function ($key, $val = null) use (&$savedData, $addressMock) {
+                if (is_string($key)) {
+                    $savedData[$key] = $val;
+                }
+                return $addressMock;
+            });
+        $addressMock->method('getData')
+            ->willReturnCallback(function (string $key) use (&$savedData) {
+                return $savedData[$key] ?? null;
+            });
+
+        $point = new ServicePointValueObject(
+            'BOX-99',
+            'Box 99',
+            'Street 99',
+            '11-111',
+            'Krakow',
+            true,
+            false,
+            '87654321',
+            'DE'
+        );
+
+        $this->registry->applyToAddress($addressMock, $point);
+
+        $this->assertSame('BOX-99', $savedData[ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID]);
+        $this->assertSame('Box 99', $savedData[ServicePointSessionRegistry::FIELD_SERVICE_POINT_NAME]);
+        $this->assertSame(1, $savedData[ServicePointSessionRegistry::FIELD_IS_PACKSTATION]);
+        $this->assertSame(0, $savedData[ServicePointSessionRegistry::FIELD_IS_POSTFILIALE]);
+        $this->assertSame('87654321', $savedData[ServicePointSessionRegistry::FIELD_POSTNUMMER]);
+
+        $this->assertTrue($this->registry->clearAddressData($addressMock));
+        $this->assertNull($savedData[ServicePointSessionRegistry::FIELD_SERVICE_POINT_ID]);
+        $this->assertSame(0, $savedData[ServicePointSessionRegistry::FIELD_IS_PACKSTATION]);
+        $this->assertFalse($this->registry->clearAddressData($addressMock));
     }
 }
