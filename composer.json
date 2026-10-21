@@ -21,7 +21,7 @@
         "delivery"
     ],
     "require": {
-        "php": ">=8.1",
+        "php": "~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
         "dhl-poland/module-dhl": "^1.0",
         "hyva-themes/magento2-hyva-checkout": "^1.3"
     },

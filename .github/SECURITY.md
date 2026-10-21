@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-The DHL eCommerce shipping module interacts with external shipping APIs and handles sensitive shipping and logistics operations. We take security seriously.
+The DHL eCommerce Hyvä Checkout compatibility module handles customer delivery preferences, pickup point selection, and checkout step validations. We take security seriously.
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
@@ -19,6 +19,6 @@ Please include in your report:
 - A detailed description of the vulnerability.
 - Steps to reproduce the issue (proof of concept).
 - Potential impact.
-- Affected Magento and PHP versions.
+- Affected Magento, Hyvä Checkout, and PHP versions.
 
 You should receive an acknowledgment within 48 hours. We appreciate your efforts to responsibly disclose vulnerabilities.

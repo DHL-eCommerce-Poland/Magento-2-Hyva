@@ -11,19 +11,19 @@ Fixes #(issue)
 - [ ] Documentation update
 
 ## Areas Affected
-- [ ] Carrier & Rate Calculation
-- [ ] Courier Pickup / Booking
-- [ ] Service Points (POP / Box)
-- [ ] Label Generation & Tracking
-- [ ] Customs Documentation
-- [ ] Admin UI / Configuration
-- [ ] Storefront Checkout
+- [ ] Service Points (POP / Box Map Modal)
+- [ ] German Packstation (Postnummer Field & Validation)
+- [ ] Magewire Component & State Management
+- [ ] Hyvä Checkout Step Evaluation / Validation
+- [ ] Quote to Order Data Synchronization
+- [ ] Tailwind CSS & Theme Styling
+- [ ] Content Security Policy (CSP)
 
 ## Checklist
 - [ ] My code follows the Magento Coding Standard (`phpcs --standard=Magento2`)
 - [ ] I have added unit tests for new business logic / regression tests for bug fixes
 - [ ] All unit tests pass locally (`vendor/bin/phpunit -c phpunit.xml.dist Test/Unit`)
-- [ ] Compatible with minimum supported versions (Magento Open Source 2.4.4, PHP 8.1)
+- [ ] Compatible with minimum supported versions (Magento Open Source 2.4.4, PHP 8.1, Hyvä Checkout 1.3)
 - [ ] My commits and PR title follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, etc.)
 - [ ] No sensitive credentials, tokens, or customer data are committed or exposed
 - [ ] Documentation (README.md, PHPDoc) has been updated where appropriate
