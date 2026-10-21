@@ -17,20 +17,28 @@ use Magento\Framework\View\Element\Template;
 
 $magewire = $block->getData('magewire');
 $viewModel = $block->getData('view_model');
-$shippingMethod = $block->getData('method');
-$methodCode = $shippingMethod ? $shippingMethod->getMethodCode() : '';
-$countryCode = $viewModel ? $viewModel->getDestinationCountry() : 'PL';
-$mapUrl = $viewModel ? $viewModel->getMapUrl($methodCode, $countryCode) : 'https://parcelshop.dhl.pl/mapa';
-$isGermanPackstation = $viewModel ? $viewModel->isGermanPackstation($countryCode, $methodCode) : false;
+$methodCode = (string) ($block->getData('method_code') ?: $block->getBlockAlias());
 $isPackstation = $viewModel ? $viewModel->isPackstation($methodCode) : false;
 $isParcelShop = $viewModel ? $viewModel->isParcelShop($methodCode) : false;
+$countryCode = $viewModel ? $viewModel->getDestinationCountry() : 'PL';
+if (($isPackstation || $isParcelShop) && $countryCode === 'PL') {
+    $countryCode = 'DE';
+}
+$mapUrl = $viewModel ? $viewModel->getMapUrl($methodCode, $countryCode) : 'https://parcelshop.dhl.pl/mapa';
+$isGermanPackstation = $viewModel ? $viewModel->isGermanPackstation($countryCode, $methodCode) : false;
+$pointMapType = $viewModel ? $viewModel->getPointMapType($methodCode) : 'all';
+$isCodMethod = $viewModel ? $viewModel->isCodMethod($methodCode) : false;
 
 $config = [
+    'baseUrl' => $viewModel ? $viewModel->getBaseMapUrl() : 'https://parcelshop.dhl.pl/mapa',
     'mapUrl' => $mapUrl,
+    'pointMapType' => $pointMapType,
+    'isCodMethod' => $isCodMethod,
     'isGermanPackstation' => $isGermanPackstation,
     'isPackstation' => $isPackstation,
     'isParcelShop' => $isParcelShop,
     'methodCode' => $methodCode,
+    'countryCode' => $countryCode,
     'packstationLabel' => (string) __('Packstation'),
     'parcelshopLabel' => (string) __('Parcelshop'),
     'pointData' => [
@@ -41,7 +49,7 @@ $config = [
         'city' => (string) ($magewire->pointCity ?? ''),
         'isPackstation' => (bool) ($magewire->isPackstation ?? false),
         'isPostfiliale' => (bool) ($magewire->isPostfiliale ?? false),
-        'country' => (string) ($magewire->country ?? 'PL'),
+        'country' => (string) ($magewire->country ?? $countryCode),
     ],
     'postnummer' => (string) ($magewire->postnummer ?? '')
 ];

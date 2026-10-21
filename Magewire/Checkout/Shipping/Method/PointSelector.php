@@ -151,10 +151,22 @@ class PointSelector extends Component implements EvaluationInterface
 
             $postcode = trim((string) ($pointData['zip'] ?? $pointData['postcode'] ?? $pointData['postalCode'] ?? ''));
             $city = trim((string) ($pointData['city'] ?? ''));
-            $fallbackCountry = $shippingAddress->getCountryId() ?: ServicePointAttributes::DEFAULT_COUNTRY;
+
+            $fullMethodCode = (string) ($this->methodCode ?: $shippingAddress->getShippingMethod());
+            $cleanMethodCode = strtolower(trim($fullMethodCode));
+            if (str_starts_with($cleanMethodCode, Carrier::CODE_PREFIX)) {
+                $cleanMethodCode = substr($cleanMethodCode, strlen(Carrier::CODE_PREFIX));
+            }
+
+            $isPackstation = (bool) ($pointData['isPackstation'] ?? false)
+                || $this->methodCatalog->isPackstationMethod($cleanMethodCode);
+            $isPostfiliale = (bool) ($pointData['isPostfiliale'] ?? false)
+                || $this->methodCatalog->isParcelShopMethod($cleanMethodCode);
+
+            $fallbackCountry = ($isPackstation || $isPostfiliale)
+                ? ServicePointAttributes::GERMANY_COUNTRY_CODE
+                : ($shippingAddress->getCountryId() ?: ServicePointAttributes::DEFAULT_COUNTRY);
             $country = strtoupper(trim((string) ($pointData['country'] ?? $fallbackCountry)));
-            $isPackstation = (bool) ($pointData['isPackstation'] ?? false);
-            $isPostfiliale = (bool) ($pointData['isPostfiliale'] ?? false);
             $postnummer = trim((string) ($pointData['postnummer'] ?? $this->postnummer ?? ''));
 
             $servicePoint = new ServicePointValueObject(

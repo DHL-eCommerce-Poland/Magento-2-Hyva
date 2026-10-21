@@ -20,10 +20,29 @@ use Psr\Log\LoggerInterface;
 #[AllowMockObjectsWithoutExpectations]
 class PointSelectorViewModelTest extends TestCase
 {
+    /**
+     * @var MethodCatalog|MockObject
+     */
     private MethodCatalog|MockObject $methodCatalogMock;
+
+    /**
+     * @var ServicePointValidator|MockObject
+     */
     private ServicePointValidator|MockObject $validatorMock;
+
+    /**
+     * @var CheckoutSession|MockObject
+     */
     private CheckoutSession|MockObject $checkoutSessionMock;
+
+    /**
+     * @var LoggerInterface|MockObject
+     */
     private LoggerInterface|MockObject $loggerMock;
+
+    /**
+     * @var PointSelectorViewModel
+     */
     private PointSelectorViewModel $viewModel;
 
     protected function setUp(): void
@@ -70,6 +89,31 @@ class PointSelectorViewModelTest extends TestCase
         $this->assertSame(ServicePointAttributes::DEFAULT_COUNTRY, $this->viewModel->getDestinationCountry());
     }
 
+    public function testGetBaseMapUrlReturnsDefaultMapUrl(): void
+    {
+        $this->assertSame('https://parcelshop.dhl.pl/mapa', $this->viewModel->getBaseMapUrl());
+    }
+
+    public function testGetMapUrlForDomesticAllMethod(): void
+    {
+        $this->methodCatalogMock->method('isPackstationMethod')->willReturn(false);
+        $this->methodCatalogMock->method('isParcelShopMethod')->willReturn(false);
+
+        $url = $this->viewModel->getMapUrl('dhlpoland_economy_all', 'PL');
+
+        $this->assertSame('https://parcelshop.dhl.pl/mapa', $url);
+    }
+
+    public function testGetMapUrlForDomesticAllCodMethod(): void
+    {
+        $this->methodCatalogMock->method('isPackstationMethod')->willReturn(false);
+        $this->methodCatalogMock->method('isParcelShopMethod')->willReturn(false);
+
+        $url = $this->viewModel->getMapUrl('dhlpoland_economy_all_cod', 'PL');
+
+        $this->assertSame('https://parcelshop.dhl.pl/mapa?options_pickup_cod=T', $url);
+    }
+
     public function testGetMapUrlForDomesticBoxMethod(): void
     {
         $this->methodCatalogMock->method('isPackstationMethod')->willReturn(false);
@@ -80,6 +124,31 @@ class PointSelectorViewModelTest extends TestCase
         $this->assertStringContainsString('https://parcelshop.dhl.pl/mapa', $url);
         $this->assertStringContainsString('show_on_map_parcelstation=T', $url);
         $this->assertStringContainsString('show_on_map_parcelshop=N', $url);
+        $this->assertStringNotContainsString('options_pickup_cod=T', $url);
+    }
+
+    public function testGetMapUrlForDomesticBoxMethodWithCod(): void
+    {
+        $this->methodCatalogMock->method('isPackstationMethod')->willReturn(false);
+        $this->methodCatalogMock->method('isParcelShopMethod')->willReturn(false);
+
+        $url = $this->viewModel->getMapUrl('dhlpoland_economy_box_cod', 'PL');
+
+        $this->assertStringContainsString('options_pickup_cod=T', $url);
+        $this->assertStringContainsString('show_on_map_parcelstation=T', $url);
+        $this->assertStringContainsString('show_on_map_parcelshop=N', $url);
+    }
+
+    public function testGetMapUrlForDomesticPopMethodWithoutCod(): void
+    {
+        $this->methodCatalogMock->method('isPackstationMethod')->willReturn(false);
+        $this->methodCatalogMock->method('isParcelShopMethod')->willReturn(false);
+
+        $url = $this->viewModel->getMapUrl('dhlpoland_economy_pop', 'PL');
+
+        $this->assertStringContainsString('show_on_map_parcelshop=T', $url);
+        $this->assertStringContainsString('show_on_map_parcelstation=N', $url);
+        $this->assertStringNotContainsString('options_pickup_cod=T', $url);
     }
 
     public function testGetMapUrlForDomesticPopMethodWithCod(): void
@@ -103,6 +172,55 @@ class PointSelectorViewModelTest extends TestCase
 
         $this->assertStringContainsString('country=DE', $url);
         $this->assertStringContainsString('ptype=packStation', $url);
+    }
+
+    public function testGetMapUrlForPackstationDefaultsToGermanyWhenCountryIsPoland(): void
+    {
+        $this->methodCatalogMock->method('isPackstationMethod')->willReturn(true);
+        $this->methodCatalogMock->method('isParcelShopMethod')->willReturn(false);
+
+        $url = $this->viewModel->getMapUrl('dhlpoland_connect_packstation', 'PL');
+
+        $this->assertStringContainsString('country=DE', $url);
+        $this->assertStringContainsString('ptype=packStation', $url);
+    }
+
+    public function testGetMapUrlForInternationalParcelShop(): void
+    {
+        $this->methodCatalogMock->method('isPackstationMethod')->willReturn(false);
+        $this->methodCatalogMock->method('isParcelShopMethod')->willReturn(true);
+
+        $url = $this->viewModel->getMapUrl('dhlpoland_connect_parcelshop', 'AT');
+
+        $this->assertStringContainsString('country=AT', $url);
+        $this->assertStringContainsString('ptype=parcelShop', $url);
+    }
+
+    public function testGetPointMapTypeResolvesCorrectTypes(): void
+    {
+        $this->methodCatalogMock->method('isPackstationMethod')->willReturnCallback(
+            fn(string $code) => str_contains($code, 'packstation')
+        );
+        $this->methodCatalogMock->method('isParcelShopMethod')->willReturnCallback(
+            fn(string $code) => str_contains($code, 'parcelshop')
+        );
+
+        $this->assertSame('box', $this->viewModel->getPointMapType('dhlpoland_economy_box'));
+        $this->assertSame('box', $this->viewModel->getPointMapType('dhlpoland_economy_box_cod'));
+        $this->assertSame('box', $this->viewModel->getPointMapType('dhlpoland_connect_packstation'));
+        $this->assertSame('pop', $this->viewModel->getPointMapType('dhlpoland_economy_pop'));
+        $this->assertSame('pop', $this->viewModel->getPointMapType('dhlpoland_economy_pop_cod'));
+        $this->assertSame('pop', $this->viewModel->getPointMapType('dhlpoland_connect_parcelshop'));
+        $this->assertSame('all', $this->viewModel->getPointMapType('dhlpoland_economy_all'));
+        $this->assertSame('all', $this->viewModel->getPointMapType('dhlpoland_economy_all_cod'));
+    }
+
+    public function testIsCodMethodIdentifiesCod(): void
+    {
+        $this->assertTrue($this->viewModel->isCodMethod('dhlpoland_economy_box_cod'));
+        $this->assertTrue($this->viewModel->isCodMethod('economy_all_cod'));
+        $this->assertFalse($this->viewModel->isCodMethod('dhlpoland_economy_box'));
+        $this->assertFalse($this->viewModel->isCodMethod('economy_all'));
     }
 
     public function testIsServicePointRequiredDelegatesToValidator(): void

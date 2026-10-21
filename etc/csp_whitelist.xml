@@ -8,6 +8,7 @@
                 <value id="dhl_pl" type="host">*.dhl.pl</value>
                 <value id="dhl_com" type="host">*.dhl.com</value>
                 <value id="dhl24_pl" type="host">https://dhl24.com.pl</value>
+                <value id="google_com" type="host">*.google.com</value>
             </values>
         </policy>
         <policy id="connect-src">

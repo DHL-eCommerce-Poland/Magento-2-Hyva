@@ -218,6 +218,7 @@
                    as="dhlpoland_economy_all"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_economy_all</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_pop_portrait.png</item>
@@ -239,6 +240,7 @@
                    as="dhlpoland_economy_all_cod"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_economy_all_cod</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_pop_portrait.png</item>
@@ -260,6 +262,7 @@
                    as="dhlpoland_economy_pop"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_economy_pop</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_pop_portrait.png</item>
@@ -281,6 +284,7 @@
                    as="dhlpoland_economy_pop_cod"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_economy_pop_cod</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_pop_portrait.png</item>
@@ -302,6 +306,7 @@
                    as="dhlpoland_economy_box"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_economy_box</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_portrait.png</item>
@@ -323,6 +328,7 @@
                    as="dhlpoland_economy_box_cod"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_economy_box_cod</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_HyvaDhl::images/logo_dhl_box_portrait.png</item>
@@ -344,6 +350,7 @@
                    as="dhlpoland_connect_parcelshop"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_connect_parcelshop</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
@@ -365,6 +372,7 @@
                    as="dhlpoland_connect_parcelshop_cod"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_connect_parcelshop_cod</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
@@ -386,6 +394,7 @@
                    as="dhlpoland_connect_packstation"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_connect_packstation</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>
@@ -407,6 +416,7 @@
                    as="dhlpoland_connect_packstation_cod"
                    template="DhlPoland_HyvaDhl::checkout/shipping/method/point-selector.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">dhlpoland_connect_packstation_cod</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">DhlPoland_Dhl::images/logo_dhl.png</item>

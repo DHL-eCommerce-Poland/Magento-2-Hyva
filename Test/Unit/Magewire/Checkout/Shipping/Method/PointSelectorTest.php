@@ -26,14 +26,49 @@ use Psr\Log\LoggerInterface;
 #[AllowMockObjectsWithoutExpectations]
 class PointSelectorTest extends TestCase
 {
+    /**
+     * @var CheckoutSession|MockObject
+     */
     private CheckoutSession|MockObject $checkoutSessionMock;
+
+    /**
+     * @var CartRepositoryInterface|MockObject
+     */
     private CartRepositoryInterface|MockObject $quoteRepositoryMock;
+
+    /**
+     * @var ServicePointValidator|MockObject
+     */
     private ServicePointValidator|MockObject $validatorMock;
+
+    /**
+     * @var MethodCatalog|MockObject
+     */
     private MethodCatalog|MockObject $methodCatalogMock;
+
+    /**
+     * @var LoggerInterface|MockObject
+     */
     private LoggerInterface|MockObject $loggerMock;
+
+    /**
+     * @var EvaluationResultFactory|MockObject
+     */
     private EvaluationResultFactory|MockObject $evaluationResultFactoryMock;
+
+    /**
+     * @var Quote|MockObject
+     */
     private Quote|MockObject $quoteMock;
+
+    /**
+     * @var QuoteAddress|MockObject
+     */
     private QuoteAddress|MockObject $shippingAddressMock;
+
+    /**
+     * @var PointSelector
+     */
     private PointSelector $pointSelector;
 
     protected function setUp(): void

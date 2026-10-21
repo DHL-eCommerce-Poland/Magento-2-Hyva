@@ -15,7 +15,11 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
 <script>
     function initDhlPointSelector() {
         return {
+            baseUrl: 'https://parcelshop.dhl.pl/mapa',
             mapUrl: 'https://parcelshop.dhl.pl/mapa',
+            pointMapType: 'all',
+            isCodMethod: false,
+            countryCode: 'PL',
             isGermanPackstationMethod: false,
             isPackstationMethod: false,
             isParcelShopMethod: false,
@@ -47,7 +51,11 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                 }
                 try {
                     const config = JSON.parse(this.$el.dataset.config);
+                    if (config.baseUrl) this.baseUrl = config.baseUrl;
                     if (config.mapUrl) this.mapUrl = config.mapUrl;
+                    if (config.pointMapType) this.pointMapType = config.pointMapType;
+                    if (typeof config.isCodMethod !== 'undefined') this.isCodMethod = Boolean(config.isCodMethod);
+                    if (config.countryCode) this.countryCode = config.countryCode;
                     if (typeof config.isGermanPackstation !== 'undefined') this.isGermanPackstationMethod = Boolean(config.isGermanPackstation);
                     if (typeof config.isPackstation !== 'undefined') this.isPackstationMethod = Boolean(config.isPackstation);
                     if (typeof config.isParcelShop !== 'undefined') this.isParcelShopMethod = Boolean(config.isParcelShop);
@@ -124,11 +132,56 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
             get needsPostnummer() {
                 return Boolean(
                     this.isGermanPackstationMethod ||
+                    this.isPackstationMethod ||
                     (this.pointData && this.pointData.isPackstation && this.pointData.country === 'DE')
                 );
             },
 
+            getMapIframeUrl() {
+                const baseUrl = this.baseUrl || 'https://parcelshop.dhl.pl/mapa';
+                let country = (this.pointData && this.pointData.country) ? this.pointData.country : (this.countryCode || 'PL');
+
+                const formCountry = document.querySelector('select[name="country_id"]')?.value
+                    || document.querySelector('[name="country_id"]')?.value;
+                if (formCountry) {
+                    country = formCountry;
+                }
+
+                if (this.isPackstationMethod || this.isGermanPackstationMethod) {
+                    country = 'DE';
+                } else if (this.isParcelShopMethod && country.toUpperCase() === 'PL') {
+                    country = 'DE';
+                }
+
+                country = (country || 'PL').toUpperCase();
+                const params = [];
+
+                if (country !== 'PL') {
+                    params.push('country=' + encodeURIComponent(country));
+
+                    if (this.pointMapType === 'box' || this.isPackstationMethod) {
+                        params.push('ptype=packStation');
+                    } else if (this.pointMapType === 'pop' || this.isParcelShopMethod) {
+                        params.push('ptype=parcelShop');
+                    }
+                } else {
+                    if (this.isCodMethod) {
+                        params.push('options_pickup_cod=T');
+                    }
+
+                    if (this.pointMapType === 'box') {
+                        params.push('show_on_map_parcelshop=N&show_on_map_parcelshop_late=N&show_on_map_parcelstation=T');
+                    } else if (this.pointMapType === 'pop') {
+                        params.push('show_on_map_parcelshop=T&show_on_map_parcelshop_late=N&show_on_map_parcelstation=N');
+                    }
+                }
+
+                const sep = baseUrl.includes('?') ? '&' : '?';
+                return params.length ? baseUrl + sep + params.join('&') : baseUrl;
+            },
+
             openModal() {
+                this.mapUrl = this.getMapIframeUrl();
                 this.modalOpen = true;
             },
 
@@ -185,7 +238,8 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                         }
                         const zip = rawData.zip || rawData.postalCode || '';
                         const city = rawData.city || '';
-                        const country = (rawData.country || 'PL').toUpperCase();
+                        const defaultCountry = (self.isGermanPackstationMethod || self.isPackstationMethod || self.isParcelShopMethod) ? 'DE' : 'PL';
+                        const country = (rawData.country || defaultCountry).toUpperCase();
 
                         const isPackstation = Boolean(self.isPackstationMethod);
                         const isPostfiliale = Boolean(self.isParcelShopMethod);

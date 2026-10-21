@@ -57,6 +57,16 @@ class PointSelectorViewModel implements ArgumentInterface
     }
 
     /**
+     * Get default base URL for the DHL map iframe widget.
+     *
+     * @return string
+     */
+    public function getBaseMapUrl(): string
+    {
+        return ConfigProvider::DEFAULT_MAP_URL;
+    }
+
+    /**
      * Build iframe URL for DHL map with recipient country and service filters.
      *
      * @param string $methodCode
@@ -66,18 +76,22 @@ class PointSelectorViewModel implements ArgumentInterface
      */
     public function getMapUrl(string $methodCode, ?string $countryCode = null): string
     {
-        $baseUrl = ConfigProvider::DEFAULT_MAP_URL;
-
-        $country = strtoupper(trim((string) ($countryCode ?: $this->getDestinationCountry())));
-        if ($country === '') {
-            $country = ServicePointAttributes::DEFAULT_COUNTRY;
-        }
+        $baseUrl = $this->getBaseMapUrl();
 
         $cleanMethod = $this->normalizeMethodCode($methodCode);
-        $isCod = str_ends_with($cleanMethod, '_cod') || str_contains($cleanMethod, '_cod');
-
+        $isCod = $this->isCodMethod($cleanMethod);
         $isPackstation = $this->methodCatalog->isPackstationMethod($cleanMethod);
         $isParcelShop = $this->methodCatalog->isParcelShopMethod($cleanMethod);
+
+        $country = strtoupper(trim((string) ($countryCode ?: $this->getDestinationCountry())));
+        if ($country === '' || $country === ServicePointAttributes::DEFAULT_COUNTRY) {
+            if ($isPackstation || $isParcelShop) {
+                $country = ServicePointAttributes::GERMANY_COUNTRY_CODE;
+            } else {
+                $country = ServicePointAttributes::DEFAULT_COUNTRY;
+            }
+        }
+
         $isBoxDomestic = in_array(
             $cleanMethod,
             [MethodCatalog::METHOD_ECONOMY_BOX, MethodCatalog::METHOD_ECONOMY_BOX_COD],
@@ -117,6 +131,42 @@ class PointSelectorViewModel implements ArgumentInterface
 
         $separator = str_contains($baseUrl, '?') ? '&' : '?';
         return $baseUrl . $separator . implode('&', $params);
+    }
+
+    /**
+     * Determine map point type (all, box, pop) for given shipping method code.
+     *
+     * @param string $methodCode
+     *
+     * @return string
+     */
+    public function getPointMapType(string $methodCode): string
+    {
+        $clean = $this->normalizeMethodCode($methodCode);
+        if (in_array($clean, [MethodCatalog::METHOD_ECONOMY_BOX, MethodCatalog::METHOD_ECONOMY_BOX_COD], true)
+            || $this->methodCatalog->isPackstationMethod($clean)) {
+            return 'box';
+        }
+
+        if (in_array($clean, [MethodCatalog::METHOD_ECONOMY_POP, MethodCatalog::METHOD_ECONOMY_POP_COD], true)
+            || $this->methodCatalog->isParcelShopMethod($clean)) {
+            return 'pop';
+        }
+
+        return 'all';
+    }
+
+    /**
+     * Check whether shipping method is Cash On Delivery (COD).
+     *
+     * @param string $methodCode
+     *
+     * @return bool
+     */
+    public function isCodMethod(string $methodCode): bool
+    {
+        $clean = $this->normalizeMethodCode($methodCode);
+        return str_ends_with($clean, '_cod') || str_contains($clean, '_cod');
     }
 
     /**
