@@ -9,6 +9,7 @@ use DhlPoland\Dhl\Model\MethodCatalog;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValidator;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValueObject;
 use DhlPoland\HyvaDhl\Magewire\Checkout\Shipping\Method\PointSelector;
+use DhlPoland\HyvaDhl\Model\Checkout\ServicePointSessionRegistry;
 use DhlPoland\HyvaDhl\Model\ServicePointAttributes;
 use Hyva\Checkout\Model\Magewire\Component\Evaluation\ErrorEventMessage;
 use Hyva\Checkout\Model\Magewire\Component\Evaluation\Success;
@@ -67,6 +68,11 @@ class PointSelectorTest extends TestCase
     private QuoteAddress|MockObject $shippingAddressMock;
 
     /**
+     * @var ServicePointSessionRegistry|MockObject
+     */
+    private ServicePointSessionRegistry|MockObject $sessionRegistryMock;
+
+    /**
      * @var PointSelector
      */
     private PointSelector $pointSelector;
@@ -77,6 +83,7 @@ class PointSelectorTest extends TestCase
         $this->quoteRepositoryMock = $this->createMock(CartRepositoryInterface::class);
         $this->validatorMock = $this->createMock(ServicePointValidator::class);
         $this->methodCatalogMock = $this->createMock(MethodCatalog::class);
+        $this->sessionRegistryMock = $this->createMock(ServicePointSessionRegistry::class);
         $this->loggerMock = $this->createMock(LoggerInterface::class);
         $this->evaluationResultFactoryMock = $this->createMock(EvaluationResultFactory::class);
         $this->quoteMock = $this->createMock(Quote::class);
@@ -90,6 +97,7 @@ class PointSelectorTest extends TestCase
             $this->quoteRepositoryMock,
             $this->validatorMock,
             $this->methodCatalogMock,
+            $this->sessionRegistryMock,
             $this->loggerMock
         );
     }
@@ -154,6 +162,11 @@ class PointSelectorTest extends TestCase
             ->method('save')
             ->with($this->quoteMock);
 
+        $this->sessionRegistryMock->expects($this->once())
+            ->method('savePointForMethod')
+            ->with('dhlpoland_economy_box', $this->isInstanceOf(ServicePointValueObject::class));
+
+        $this->pointSelector->methodCode = 'dhlpoland_economy_box';
         $this->pointSelector->selectPoint($pointData);
 
         $this->assertSame('BOX-KRK-999', $this->pointSelector->pointId);
@@ -187,6 +200,11 @@ class PointSelectorTest extends TestCase
             ->method('save')
             ->with($this->quoteMock);
 
+        $this->sessionRegistryMock->expects($this->once())
+            ->method('removePointForMethod')
+            ->with('dhlpoland_economy_box');
+
+        $this->pointSelector->methodCode = 'dhlpoland_economy_box';
         $this->pointSelector->clearPoint();
 
         $this->assertNull($this->pointSelector->pointId);

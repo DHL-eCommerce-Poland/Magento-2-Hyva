@@ -8,6 +8,7 @@ use DhlPoland\Dhl\Model\Carrier;
 use DhlPoland\Dhl\Model\MethodCatalog;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValidator;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValueObject;
+use DhlPoland\HyvaDhl\Model\Checkout\ServicePointSessionRegistry;
 use DhlPoland\HyvaDhl\Model\ServicePointAttributes;
 use DhlPoland\HyvaDhl\Plugin\Hyva\Checkout\Magewire\ShippingMethodListPlugin;
 use Hyva\Checkout\Magewire\Checkout\Shipping\MethodList;
@@ -48,6 +49,11 @@ class ShippingMethodListPluginTest extends TestCase
     private MethodCatalog|MockObject $methodCatalogMock;
 
     /**
+     * @var ServicePointSessionRegistry|MockObject
+     */
+    private ServicePointSessionRegistry|MockObject $sessionRegistryMock;
+
+    /**
      * @var LoggerInterface|MockObject
      */
     private LoggerInterface|MockObject $loggerMock;
@@ -83,6 +89,7 @@ class ShippingMethodListPluginTest extends TestCase
         $this->quoteRepositoryMock = $this->createMock(CartRepositoryInterface::class);
         $this->validatorMock = $this->createMock(ServicePointValidator::class);
         $this->methodCatalogMock = $this->createMock(MethodCatalog::class);
+        $this->sessionRegistryMock = $this->createMock(ServicePointSessionRegistry::class);
         $this->loggerMock = $this->createMock(LoggerInterface::class);
         $this->evaluationResultFactoryMock = $this->createMock(EvaluationResultFactory::class);
         $this->subjectMock = $this->createMock(MethodList::class);
@@ -97,6 +104,7 @@ class ShippingMethodListPluginTest extends TestCase
             $this->quoteRepositoryMock,
             $this->validatorMock,
             $this->methodCatalogMock,
+            $this->sessionRegistryMock,
             $this->loggerMock
         );
     }
@@ -221,5 +229,51 @@ class ShippingMethodListPluginTest extends TestCase
         );
 
         $this->assertSame('dhlpoland_economy_box', $result);
+    }
+
+    public function testAfterUpdatedMethodRestoresPreviouslySavedPointForTargetMethod(): void
+    {
+        $this->methodCatalogMock->method('isServicePointMethod')->with('economy_box')->willReturn(true);
+        $this->shippingAddressMock->method('getCountryId')->willReturn('PL');
+
+        $savedPoint = new ServicePointValueObject(
+            'SAVED-BOX-01',
+            'Saved Box Point',
+            'Pocztowa 5',
+            '00-002',
+            'Warszawa',
+            true,
+            false,
+            null,
+            'PL'
+        );
+
+        $this->sessionRegistryMock->expects($this->once())
+            ->method('getPointForMethod')
+            ->with('dhlpoland_economy_box', 'PL')
+            ->willReturn($savedPoint);
+
+        $savedData = [];
+        $this->shippingAddressMock->expects($this->atLeastOnce())
+            ->method('setData')
+            ->willReturnCallback(function ($key, $val = null) use (&$savedData) {
+                if (is_string($key)) {
+                    $savedData[$key] = $val;
+                }
+                return $this->shippingAddressMock;
+            });
+
+        $this->quoteRepositoryMock->expects($this->once())
+            ->method('save')
+            ->with($this->quoteMock);
+
+        $result = $this->plugin->afterUpdatedMethod(
+            $this->subjectMock,
+            'dhlpoland_economy_box'
+        );
+
+        $this->assertSame('dhlpoland_economy_box', $result);
+        $this->assertSame('SAVED-BOX-01', $savedData[ServicePointAttributes::FIELD_SERVICE_POINT_ID]);
+        $this->assertSame('Saved Box Point', $savedData[ServicePointAttributes::FIELD_SERVICE_POINT_NAME]);
     }
 }

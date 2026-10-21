@@ -266,7 +266,8 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                                 country: country,
                                 isPackstation: isPackstation,
                                 isPostfiliale: isPostfiliale,
-                                postnummer: self.postnummer || ''
+                                postnummer: self.postnummer || '',
+                                methodCode: self.methodCode || ''
                             });
                         }
 

@@ -8,6 +8,7 @@ use DhlPoland\Dhl\Model\Carrier;
 use DhlPoland\Dhl\Model\MethodCatalog;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValidator;
 use DhlPoland\Dhl\Model\ServicePoint\ServicePointValueObject;
+use DhlPoland\HyvaDhl\Model\Checkout\ServicePointSessionRegistry;
 use DhlPoland\HyvaDhl\Model\ServicePointAttributes;
 use Hyva\Checkout\Model\Magewire\Component\Evaluation\EvaluationResult;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationInterface;
@@ -86,6 +87,7 @@ class PointSelector extends Component implements EvaluationInterface
      * @param CartRepositoryInterface $quoteRepository
      * @param ServicePointValidator $servicePointValidator
      * @param MethodCatalog $methodCatalog
+     * @param ServicePointSessionRegistry $sessionRegistry
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -93,6 +95,7 @@ class PointSelector extends Component implements EvaluationInterface
         private readonly CartRepositoryInterface $quoteRepository,
         private readonly ServicePointValidator $servicePointValidator,
         private readonly MethodCatalog $methodCatalog,
+        private readonly ServicePointSessionRegistry $sessionRegistry,
         private readonly LoggerInterface $logger
     ) {
     }
@@ -236,6 +239,7 @@ class PointSelector extends Component implements EvaluationInterface
             $this->postnummer = $servicePoint->getPostnummer();
             $this->country = $servicePoint->getCountry();
 
+            $this->sessionRegistry->savePointForMethod($fullMethodCode, $servicePoint);
             $this->quoteRepository->save($quote);
         } catch (Throwable $exception) {
             $this->logger->error(
@@ -274,6 +278,9 @@ class PointSelector extends Component implements EvaluationInterface
                         $extAttributes->setDhlIsPostfiliale(0);
                         $extAttributes->setDhlPostnummer(null);
                     }
+
+                    $fullMethodCode = (string) ($this->methodCode ?: $shippingAddress->getShippingMethod());
+                    $this->sessionRegistry->removePointForMethod($fullMethodCode);
 
                     $this->quoteRepository->save($quote);
                 }
