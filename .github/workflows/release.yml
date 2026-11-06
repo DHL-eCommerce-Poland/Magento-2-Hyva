@@ -44,6 +44,7 @@ jobs:
                     --exclude='phpunit.xml.dist' \
                     --exclude='Test/autoload.php' \
                     --exclude='Test/bootstrap.php' \
+                    --exclude='Test/Stubs' \
                     --exclude='AGENTS.md' \
                     --exclude='dist' \
                     --exclude='vendor' \

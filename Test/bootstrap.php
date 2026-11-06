@@ -46,6 +46,30 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
+// Autoloader for Hyvä Checkout test stubs (fallback when running without commercial packages)
+spl_autoload_register(static function (string $class): void {
+    $prefix = 'Hyva\\Checkout\\';
+    if (str_starts_with($class, $prefix)) {
+        $relativeClass = substr($class, strlen($prefix));
+        $file = __DIR__ . '/Stubs/hyva-checkout/src/' . str_replace('\\', '/', $relativeClass) . '.php';
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    }
+});
+
+// Autoloader for Magewire test stubs (fallback when running standalone)
+spl_autoload_register(static function (string $class): void {
+    $prefix = 'Magewirephp\\Magewire\\';
+    if (str_starts_with($class, $prefix)) {
+        $relativeClass = substr($class, strlen($prefix));
+        $file = __DIR__ . '/Stubs/Magewire/' . str_replace('\\', '/', $relativeClass) . '.php';
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    }
+});
+
 // 2. Define temp directory for generated test code
 if (!defined('TESTS_TEMP_DIR')) {
     define('TESTS_TEMP_DIR', sys_get_temp_dir() . '/magento_unit_tests_' . hash('sha256', __DIR__));

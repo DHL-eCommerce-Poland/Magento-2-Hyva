@@ -106,13 +106,13 @@ jobs:
             exit 1
           fi
 
-          composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
-          HYVA_USERNAME="${HYVA_USER:-token}"
           if [ -n "$HYVA_PASS" ]; then
+            composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
+            HYVA_USERNAME="${HYVA_USER:-token}"
             composer config -g http-basic.hyva-themes.repo.packagist.com "$HYVA_USERNAME" "$HYVA_PASS"
           else
-            echo "::error::Hyvä Commerce credentials (HYVA_COMMERCE_TOKEN) are not set in GitHub Secrets."
-            exit 1
+            echo "Hyvä Commerce credentials not set; using local test stub package"
+            composer config repositories.hyva-stub path Test/Stubs/hyva-checkout
           fi
 
           composer config repositories.dhl-base vcs https://github.com/DHL-eCommerce-Poland/Magento-2.git
@@ -175,13 +175,13 @@ jobs:
             exit 1
           fi
 
-          composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
-          HYVA_USERNAME="${HYVA_USER:-token}"
           if [ -n "$HYVA_PASS" ]; then
+            composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
+            HYVA_USERNAME="${HYVA_USER:-token}"
             composer config -g http-basic.hyva-themes.repo.packagist.com "$HYVA_USERNAME" "$HYVA_PASS"
           else
-            echo "::error::Hyvä Commerce credentials (HYVA_COMMERCE_TOKEN) are not set in GitHub Secrets."
-            exit 1
+            echo "Hyvä Commerce credentials not set; using local test stub package"
+            composer config repositories.hyva-stub path Test/Stubs/hyva-checkout
           fi
 
           composer config repositories.dhl-base vcs https://github.com/DHL-eCommerce-Poland/Magento-2.git
@@ -238,13 +238,13 @@ jobs:
             exit 1
           fi
 
-          composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
-          HYVA_USERNAME="${HYVA_USER:-token}"
           if [ -n "$HYVA_PASS" ]; then
+            composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
+            HYVA_USERNAME="${HYVA_USER:-token}"
             composer config -g http-basic.hyva-themes.repo.packagist.com "$HYVA_USERNAME" "$HYVA_PASS"
           else
-            echo "::error::Hyvä Commerce credentials (HYVA_COMMERCE_TOKEN) are not set in GitHub Secrets."
-            exit 1
+            echo "Hyvä Commerce credentials not set; using local test stub package"
+            composer config repositories.hyva-stub path Test/Stubs/hyva-checkout
           fi
 
           composer config repositories.dhl-base vcs https://github.com/DHL-eCommerce-Poland/Magento-2.git
@@ -301,13 +301,13 @@ jobs:
             exit 1
           fi
 
-          composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
-          HYVA_USERNAME="${HYVA_USER:-token}"
           if [ -n "$HYVA_PASS" ]; then
+            composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
+            HYVA_USERNAME="${HYVA_USER:-token}"
             composer config -g http-basic.hyva-themes.repo.packagist.com "$HYVA_USERNAME" "$HYVA_PASS"
           else
-            echo "::error::Hyvä Commerce credentials (HYVA_COMMERCE_TOKEN) are not set in GitHub Secrets."
-            exit 1
+            echo "Hyvä Commerce credentials not set; using local test stub package"
+            composer config repositories.hyva-stub path Test/Stubs/hyva-checkout
           fi
 
           composer config repositories.dhl-base vcs https://github.com/DHL-eCommerce-Poland/Magento-2.git
@@ -364,13 +364,13 @@ jobs:
             exit 1
           fi
 
-          composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
-          HYVA_USERNAME="${HYVA_USER:-token}"
           if [ -n "$HYVA_PASS" ]; then
+            composer config repositories.hyva composer https://hyva-themes.repo.packagist.com/
+            HYVA_USERNAME="${HYVA_USER:-token}"
             composer config -g http-basic.hyva-themes.repo.packagist.com "$HYVA_USERNAME" "$HYVA_PASS"
           else
-            echo "::error::Hyvä Commerce credentials (HYVA_COMMERCE_TOKEN) are not set in GitHub Secrets."
-            exit 1
+            echo "Hyvä Commerce credentials not set; using local test stub package"
+            composer config repositories.hyva-stub path Test/Stubs/hyva-checkout
           fi
 
           composer config repositories.dhl-base vcs https://github.com/DHL-eCommerce-Poland/Magento-2.git
