@@ -26,12 +26,6 @@ class PointSelector extends Component implements EvaluationInterface
 {
     public const EVENT_SHIPPING_METHOD_ERROR = 'shipping:method:error';
     public const EVENT_SHIPPING_METHOD_SUCCESS = 'shipping:method:success';
-    /**
-     * @var array
-     */
-    protected $listeners = [
-        'shipping_method_selected' => 'syncFromQuote',
-    ];
 
     /**
      * @var string|null

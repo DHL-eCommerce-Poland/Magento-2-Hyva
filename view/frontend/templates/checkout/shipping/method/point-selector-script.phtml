@@ -36,12 +36,30 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                 country: 'PL'
             },
             postnummer: '',
+            lastSavedPostnummer: '',
             postnummerTimer: null,
+            messageHandler: null,
+            configObserver: null,
 
             init() {
                 this.loadConfig();
                 this.initMessageListener();
                 this.observeConfigChanges();
+            },
+
+            destroy() {
+                if (this.postnummerTimer) {
+                    clearTimeout(this.postnummerTimer);
+                    this.postnummerTimer = null;
+                }
+                if (this.messageHandler) {
+                    window.removeEventListener('message', this.messageHandler, false);
+                    this.messageHandler = null;
+                }
+                if (this.configObserver) {
+                    this.configObserver.disconnect();
+                    this.configObserver = null;
+                }
             },
 
             loadConfig() {
@@ -66,6 +84,7 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                     }
                     if (config.methodCode) this.methodCode = config.methodCode;
                     this.postnummer = config.postnummer || '';
+                    this.lastSavedPostnummer = this.postnummer;
                     if (config.pointData && typeof config.pointData === 'object') {
                         this.pointData = {
                             sap: config.pointData.sap || '',
@@ -87,14 +106,14 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                 if (!this.$el || typeof MutationObserver === 'undefined') {
                     return;
                 }
-                const observer = new MutationObserver((mutations) => {
+                this.configObserver = new MutationObserver((mutations) => {
                     for (const mutation of mutations) {
                         if (mutation.type === 'attributes' && mutation.attributeName === 'data-config') {
                             this.loadConfig();
                         }
                     }
                 });
-                observer.observe(this.$el, { attributes: true, attributeFilter: ['data-config'] });
+                this.configObserver.observe(this.$el, { attributes: true, attributeFilter: ['data-config'] });
             },
 
             hasPoint() {
@@ -195,15 +214,20 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
             },
 
             updatePostnummer(value) {
+                const normalized = (value || '').trim();
                 this.postnummer = value;
+                if (normalized === this.lastSavedPostnummer) {
+                    return;
+                }
+                this.lastSavedPostnummer = normalized;
                 if (typeof this.$wire !== 'undefined' && typeof this.$wire.updatedPostnummer === 'function') {
-                    this.$wire.updatedPostnummer(value);
+                    this.$wire.updatedPostnummer(normalized);
                 }
             },
 
             initMessageListener() {
                 const self = this;
-                window.addEventListener('message', function (event) {
+                this.messageHandler = function (event) {
                     if (!event || !event.data || !self.modalOpen) {
                         return;
                     }
@@ -276,7 +300,8 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
 
                         self.closeModal();
                     }
-                }, false);
+                };
+                window.addEventListener('message', this.messageHandler, false);
             }
         };
     }
